@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgresql:
+    image: postgres:14
+    container_name: designPDF-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - designPDF_data:/var/lib/postgresql/data
+
+volumes:
+  designPDF_data:

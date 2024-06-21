@@ -1,7 +1,9 @@
 package database
 
 import (
+	"designmypdf/pkg/enities/relational"
 	"fmt"
+	"strings"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -13,11 +15,11 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 	var dsn string
 	var dialector gorm.Dialector
 
-	switch dbType {
-	case "MySQL":
+	switch strings.ToLower(dbType) {
+	case "mysql":
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, port, dbName)
 		dialector = mysql.Open(dsn)
-	case "PostgreSQL":
+	case "postgresql":
 		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbName, port)
 		dialector = postgres.Open(dsn)
 	default:
@@ -28,6 +30,8 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 	if err != nil {
 		return nil, err
 	}
+	// Make migration
+	db.AutoMigrate(&relational.User{}, &relational.Namespace{}, &relational.Template{}, &relational.Key{}, &relational.Log{})
 
 	return db, nil
 }
