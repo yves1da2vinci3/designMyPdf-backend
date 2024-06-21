@@ -1,13 +1,34 @@
 package main
 
 import (
+	"designmypdf/api/routes"
 	"designmypdf/config/database"
 	"fmt"
 	"log"
+	"os"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/joho/godotenv"
 )
+
+func SetupFiberServer() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err)
+	}
+	app := fiber.New()
+
+	// Set up routes
+	routes.SetupRoutes(app)
+	if err := app.Listen(fmt.Sprintf(":%s", os.Getenv("PORT"))); err != nil {
+		log.Fatalf("Error starting server: %s", err)
+	}
+}
 
 func main() {
 
+	// Initialize Fiber
+	defer SetupFiberServer()
 	// Initialize the database
 	err := database.Initialize()
 	if err != nil {
