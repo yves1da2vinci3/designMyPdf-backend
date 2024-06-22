@@ -34,7 +34,7 @@ func GenerateAccessToken(content uint) (string, error) {
 	claims := &Claims{
 		Content: content,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)),
 		},
 	}
 
@@ -46,7 +46,7 @@ func GenerateRefreshToken(content uint) (string, error) {
 	claims := &Claims{
 		Content: content,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 168)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 336)),
 		},
 	}
 
