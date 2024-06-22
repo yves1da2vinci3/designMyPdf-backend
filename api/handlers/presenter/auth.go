@@ -31,7 +31,7 @@ func UserSuccessResponse(user *entities.User) *fiber.Map {
 }
 func LoginSuccessResponse(loginResponse *LoginResponse) *fiber.Map {
 	userData := entities.User{
-		UserName: loginResponse.Data.Email,
+		UserName: loginResponse.Data.UserName,
 		Email:    loginResponse.Data.Email,
 	}
 	return &fiber.Map{
