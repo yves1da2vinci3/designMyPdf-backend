@@ -15,6 +15,6 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/", handlers.HelloWorld)
 
 	// Auth
-	authService := auth.NewService(user.NewUserRepository())
+	authService := auth.NewService(user.Repository{})
 	AuthRouter(api, authService)
 }

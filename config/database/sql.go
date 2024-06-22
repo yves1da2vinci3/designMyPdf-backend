@@ -1,7 +1,7 @@
 package database
 
 import (
-	"designmypdf/pkg/enities/relational"
+	"designmypdf/pkg/entities"
 	"fmt"
 	"strings"
 
@@ -31,7 +31,7 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		return nil, err
 	}
 	// Make migration
-	db.AutoMigrate(&relational.User{}, &relational.Namespace{}, &relational.Template{}, &relational.Key{}, &relational.Log{})
+	db.AutoMigrate(&entities.User{}, &entities.Namespace{}, &entities.Template{}, &entities.Key{}, &entities.Log{})
 
 	return db, nil
 }

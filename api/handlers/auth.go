@@ -49,7 +49,7 @@ func Login(service auth.Service) fiber.Handler {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
-		return c.JSON(presenter.UserSuccessResponse(result))
+		return c.JSON(presenter.LoginSuccessResponse(result))
 	}
 }
 

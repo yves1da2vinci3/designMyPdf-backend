@@ -1,52 +1,54 @@
 package auth
 
 import (
+	"designmypdf/api/handlers/presenter"
+	"designmypdf/config/database"
+	"designmypdf/pkg/entities"
 	"designmypdf/pkg/user"
 	"errors"
 )
 
-//	type User struct {
-//		ID       string `json:"id"omitempty"`
-//		UserName string
-//		Email    string
-//		Password string
-//	}
-type User struct {
-	UserName string
-	Email    string
-	Password string
-}
-
 type Service interface {
-	Login(email string, password string) (interface{}, error)
-	Register(userName string, email string, password string) (interface{}, error)
+	Login(email string, password string) (*presenter.LoginResponse, error)
+	Register(userName string, email string, password string) (*entities.User, error)
 	Logout(token string) error
-	Refresh(token string) (string, error)
-	Update(id string, userName string, email string, password string) (interface{}, error)
+	Refresh(token string) (uint, error)
+	Update(id int, userName string, email string, password string) (*entities.User, error)
 }
 
 type service struct {
-	repository user.UserRepository
+	repository user.Repository
 }
 
 // NewService is used to create a single instance of the service
-func NewService(r user.UserRepository) Service {
+func NewService(r user.Repository) Service {
 	return &service{
-		repository: user.NewUserRepository(),
+		repository: *user.NewRepository(database.DB),
 	}
 }
 
 // Login implements Service.
-func (s *service) Login(email string, password string) (interface{}, error) {
-	userFromRepo, err := s.repository.GetByEmail(email)
+func (s *service) Login(email string, password string) (*presenter.LoginResponse, error) {
+	user, err := s.repository.GetByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	user := userFromRepo.(*User)
+	if user == nil {
+		return nil, errors.New("user not found")
+	}
 	if !CheckPasswordHash(password, user.Password) {
 		return nil, errors.New("invalid password")
 	}
-	return user, nil
+	accessToken, err := GenerateAccessToken(user.ID)
+	refreshToken, err := GenerateRefreshToken(user.ID)
+	loginResponse := &presenter.LoginResponse{
+		Data:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		Error:        nil,
+		Status:       true,
+	}
+	return loginResponse, nil
 }
 
 // Logout implements Service.
@@ -55,23 +57,25 @@ func (s *service) Logout(token string) error {
 }
 
 // Refresh implements Service.
-func (s *service) Refresh(token string) (string, error) {
+func (s *service) Refresh(token string) (uint, error) {
 	isValid, err := ValidateRefreshToken(token)
+	if err != nil {
+		return 0, err
+	}
 
 	if !isValid {
-		return "", errors.New("invalid token")
+		return 0, errors.New("invalid token")
 	}
 
 	claims, err := DecodeRefreshToken(token)
 	if err != nil {
-		return "", errors.New("error on Generating refresh token")
+		return 0, errors.New("error on Generating refresh token")
 	}
 	return claims.Content, nil
-
 }
 
 // Register implements Service.
-func (s *service) Register(userName string, email string, password string) (interface{}, error) {
+func (s *service) Register(userName string, email string, password string) (*entities.User, error) {
 	userFromRepo, _ := s.repository.GetByEmail(email)
 
 	if userFromRepo != nil {
@@ -81,7 +85,7 @@ func (s *service) Register(userName string, email string, password string) (inte
 	if err != nil {
 		return nil, err
 	}
-	user := User{
+	user := entities.User{
 		UserName: userName,
 		Email:    email,
 		Password: hashedPassword,
@@ -94,28 +98,30 @@ func (s *service) Register(userName string, email string, password string) (inte
 }
 
 // Update implements Service.
-func (s *service) Update(id string, string, email string, password string) (interface{}, error) {
-	userFromRepo, err := s.repository.Get(id)
+func (s *service) Update(id int, userName string, email string, password string) (*entities.User, error) {
+	user, err := s.repository.Get(id)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if userFromRepo == nil {
-		return "", errors.New("user not found")
+	if user == nil {
+		return nil, errors.New("user not found")
 	}
-	user := userFromRepo.(*User)
+	if userName != "" {
+		user.UserName = userName
+	}
 	if email != "" {
 		user.Email = email
 	}
 	if password != "" {
 		hashedPassword, err := HashPassword(password)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		user.Password = hashedPassword
 	}
 	err = s.repository.Update(user)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return user, nil
 }

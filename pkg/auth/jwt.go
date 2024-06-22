@@ -26,11 +26,11 @@ var (
 )
 
 type Claims struct {
-	Content string `json:"content"`
+	Content uint `json:"content"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(content string) (string, error) {
+func GenerateAccessToken(content uint) (string, error) {
 	claims := &Claims{
 		Content: content,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -42,7 +42,7 @@ func GenerateAccessToken(content string) (string, error) {
 	return token.SignedString(accessTokenKey)
 }
 
-func GenerateRefreshToken(content string) (string, error) {
+func GenerateRefreshToken(content uint) (string, error) {
 	claims := &Claims{
 		Content: content,
 		RegisteredClaims: jwt.RegisteredClaims{
