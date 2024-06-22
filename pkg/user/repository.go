@@ -19,7 +19,7 @@ func (r *Repository) Create(user *entities.User) error {
 	return r.db.Create(user).Error
 }
 
-func (r *Repository) Get(id int) (*entities.User, error) {
+func (r *Repository) Get(id float64) (*entities.User, error) {
 	var user entities.User
 	if err := r.db.First(&user, id).Error; err != nil {
 		return nil, err

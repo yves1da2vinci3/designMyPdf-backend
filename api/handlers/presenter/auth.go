@@ -20,7 +20,7 @@ type LoginResponse struct {
 func UserSuccessResponse(user *entities.User) *fiber.Map {
 
 	userData := entities.User{
-		UserName: user.Email,
+		UserName: user.UserName,
 		Email:    user.Email,
 	}
 	return &fiber.Map{

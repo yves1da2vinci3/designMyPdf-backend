@@ -18,6 +18,10 @@ type SignupDTO struct {
 	Password string `json:"password"`
 	UserName string `json:"userName"`
 }
+type UpdateDTO struct {
+	Password string `json:"password"`
+	UserName string `json:"userName"`
+}
 
 // Login is handler/controller which
 //	@Summary		Login user
@@ -67,6 +71,24 @@ func Register(service auth.Service) fiber.Handler {
 				"please specify email and password")))
 		}
 		result, err := service.Register(requestBody.UserName, requestBody.Email, requestBody.Password)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+		return c.JSON(presenter.UserSuccessResponse(result))
+	}
+}
+
+func Update(service auth.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var requestBody UpdateDTO
+		err := c.BodyParser(&requestBody)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+		userID := c.Locals("userID").(float64)
+		result, err := service.Update(userID, requestBody.UserName, requestBody.Password)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(err))

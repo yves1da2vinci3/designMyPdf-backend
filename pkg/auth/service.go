@@ -13,7 +13,7 @@ type Service interface {
 	Register(userName string, email string, password string) (*entities.User, error)
 	Logout(token string) error
 	Refresh(token string) (uint, error)
-	Update(id int, userName string, email string, password string) (*entities.User, error)
+	Update(id float64, userName string, password string) (*entities.User, error)
 }
 
 type service struct {
@@ -98,7 +98,7 @@ func (s *service) Register(userName string, email string, password string) (*ent
 }
 
 // Update implements Service.
-func (s *service) Update(id int, userName string, email string, password string) (*entities.User, error) {
+func (s *service) Update(id float64, userName string, password string) (*entities.User, error) {
 	user, err := s.repository.Get(id)
 	if err != nil {
 		return nil, err
@@ -108,9 +108,6 @@ func (s *service) Update(id int, userName string, email string, password string)
 	}
 	if userName != "" {
 		user.UserName = userName
-	}
-	if email != "" {
-		user.Email = email
 	}
 	if password != "" {
 		hashedPassword, err := HashPassword(password)
