@@ -2,6 +2,8 @@ package routes
 
 import (
 	"designmypdf/api/handlers"
+	"designmypdf/pkg/auth"
+	"designmypdf/pkg/user"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -13,5 +15,6 @@ func SetupRoutes(app *fiber.App) {
 	api.Get("/", handlers.HelloWorld)
 
 	// Auth
-	AuthRouter(api)
+	authService := auth.NewService(user.NewUserRepository())
+	AuthRouter(api, authService)
 }
