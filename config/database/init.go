@@ -30,7 +30,7 @@ type DatabaseConfig struct {
 
 // Initialize initializes the database connection based on the environment variables
 func Initialize() error {
-	config := getConfigFromEnv()
+	config := GetConfigFromEnv()
 	switch strings.ToLower(config.DBType) {
 	case "mongodb":
 		client, err := InitializeMongo(config.MongoURI)
@@ -58,7 +58,7 @@ func Initialize() error {
 }
 
 // getConfigFromEnv retrieves the database configuration from environment variables
-func getConfigFromEnv() DatabaseConfig {
+func GetConfigFromEnv() DatabaseConfig {
 	return DatabaseConfig{
 		DBType:   getEnv("DB_TYPE", "MongoDB"),
 		Host:     getEnv("DB_HOST", "localhost"),

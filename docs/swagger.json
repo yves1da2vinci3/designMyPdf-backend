@@ -15,6 +15,6 @@
         "version": "1.0"
     },
     "host": "localhost:5000",
-    "basePath": "/",
+    "basePath": "/api",
     "paths": {}
 }

@@ -48,7 +48,7 @@ func SetupFiberServer() {
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 // @host localhost:5000
-// @BasePath /
+// @BasePath /api
 func main() {
 	// Initialize the database
 	err := database.Initialize()

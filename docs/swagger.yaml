@@ -1,4 +1,4 @@
-basePath: /
+basePath: /api
 host: localhost:5000
 info:
   contact:

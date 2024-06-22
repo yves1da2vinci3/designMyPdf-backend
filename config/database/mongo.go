@@ -10,18 +10,13 @@ import (
 
 // InitializeMongo initializes the MongoDB connection
 func InitializeMongo(uri string) (*mongo.Client, error) {
-	client, err := mongo.NewClient(options.Client().ApplyURI(uri))
-	if err != nil {
-		return nil, err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	err = client.Connect(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			panic(err)
+		}
+	}()
 	return client, nil
 }
