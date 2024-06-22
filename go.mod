@@ -22,6 +22,7 @@ require (
 	cloud.google.com/go/longrunning v0.5.7 // indirect
 	cloud.google.com/go/storage v1.42.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
+	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
@@ -38,8 +39,10 @@ require (
 	github.com/go-openapi/strfmt v0.21.8 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-openapi/validate v0.22.3 // indirect
+	github.com/gofiber/contrib/jwt v1.0.9 // indirect
 	github.com/gofiber/contrib/swagger v1.1.2 // indirect
 	github.com/gofiber/fiber/v2 v2.52.4 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
