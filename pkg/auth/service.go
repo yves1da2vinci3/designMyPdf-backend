@@ -45,6 +45,7 @@ func (s *service) Login(email string, password string) (*presenter.LoginResponse
 	}
 	accessToken, err := GenerateAccessToken(user.ID)
 	refreshToken, err := GenerateRefreshToken(user.ID)
+
 	loginResponse := &presenter.LoginResponse{
 		Data:         user,
 		AccessToken:  accessToken,

@@ -16,4 +16,5 @@ func AuthRouter(api fiber.Router, authService auth.Service) {
 	authRouter.Put("/update", middleware.Protected(), handlers.Update(authService))
 	authRouter.Post("/forgot-password", handlers.ForgotPassword(authService))
 	authRouter.Put("/reset-password", handlers.ResetPassword(authService))
+	authRouter.Put("/refresh-token", handlers.RefreshToken(authService))
 }

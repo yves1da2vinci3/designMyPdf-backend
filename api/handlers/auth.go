@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 type LoginDTO struct {
@@ -63,6 +64,15 @@ func Login(service auth.Service) fiber.Handler {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
+		// Store refresh token in session
+		sess := c.Locals("session").(*session.Session)
+		sess.Set("refreshToken", result.RefreshToken)
+		sess.Set("userID", result.Data.ID)
+		if err := sess.Save(); err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Could not save session",
+			})
+		}
 		return c.JSON(presenter.LoginSuccessResponse(result))
 	}
 }
@@ -86,7 +96,7 @@ func Register(service auth.Service) fiber.Handler {
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
 
-		email.SendSignupEmail(requestBody.Email, requestBody.UserName)
+		err = email.SendSignupEmail(requestBody.Email, requestBody.UserName)
 		if err != nil {
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
@@ -141,5 +151,46 @@ func ResetPassword(service auth.Service) fiber.Handler {
 			return c.Status(http.StatusInternalServerError).JSON(presenter.UserErrorResponse(err))
 		}
 		return c.JSON(fiber.Map{"message": "Password reseted "})
+	}
+}
+
+func RefreshToken(service auth.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get session
+		sess := c.Locals("session").(*session.Session)
+		refreshToken := sess.Get("refreshToken")
+		userID := sess.Get("userID")
+		if refreshToken == nil || userID == nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "No refresh token or user ID found",
+			})
+		}
+
+		// Validate and decode refresh token
+		claims, err := auth.DecodeRefreshToken(refreshToken.(string))
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid refresh token",
+			})
+		}
+
+		// Check if the user ID matches
+		if claims.Content != userID {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid user ID",
+			})
+		}
+
+		// Generate new access token
+		accessToken, err := auth.GenerateAccessToken(claims.Content)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Could not generate access token",
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"accessToken": accessToken,
+		})
 	}
 }

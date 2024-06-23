@@ -43,6 +43,7 @@ require (
 	github.com/gofiber/contrib/jwt v1.0.9 // indirect
 	github.com/gofiber/contrib/swagger v1.1.2 // indirect
 	github.com/gofiber/fiber/v2 v2.52.4 // indirect
+	github.com/gofiber/storage/sqlite3 v1.3.8 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
@@ -53,6 +54,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
+	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
