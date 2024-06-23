@@ -20,7 +20,7 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, port, dbName)
 		dialector = mysql.Open(dsn)
 	case "postgresql":
-		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai", host, user, password, dbName, port)
+		dsn = fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=enable TimeZone=Asia/Shanghai", host, user, password, dbName, port)
 		dialector = postgres.Open(dsn)
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", dbType)
