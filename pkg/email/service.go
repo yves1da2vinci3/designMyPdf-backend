@@ -10,70 +10,56 @@ import (
 )
 
 type Email struct {
-	From    string
-	To      string
-	Subject string
-	Body    string
+	From        string
+	To          string
+	Subject     string
+	Body        string
+	ContentType string
 }
 
-func SendSignupEmail(to, userName string) error {
+func init() {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatalf("Error loading .env file: %s", err)
 	}
+}
+
+func SendSignupEmail(to, userName string) error {
 	email := Email{
 		From:    os.Getenv("GMAIL_EMAIL"),
 		To:      to,
 		Subject: "Welcome to DesignMyPDF!",
-		Body:    fmt.Sprintf(" Dear %s Thank you for signing up for DesignMyPDF! ", userName),
+		Body:    fmt.Sprintf("Dear %s, Thank you for signing up for DesignMyPDF!", userName),
 	}
 
 	return sendEmail(email)
 }
 
-func SendForgotPasswordEmail(to, resetPasswordLink string) error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
+func SendForgotPasswordEmail(to, token string) error {
 	email := Email{
-		From:    os.Getenv("GMAIL_EMAIL"),
-		To:      to,
-		Subject: "DesignMyPDF Password Reset",
-		Body:    fmt.Sprintf("To reset your password, click the following link: %s", resetPasswordLink),
-	}
-
-	return sendEmail(email)
-}
-
-func SendOTPEmail(to, otp string) error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
-	email := Email{
-		From:    os.Getenv("GMAIL_EMAIL"),
-		To:      to,
-		Subject: "DesignMyPDF One-Time Password",
-		Body:    fmt.Sprintf("Your one-time password for DesignMyPDF is: %s", otp),
+		From:        os.Getenv("GMAIL_EMAIL"),
+		To:          to,
+		Subject:     "DesignMyPDF Password Reset",
+		Body:        fmt.Sprintf("<p>To reset your password, click the following link:</p><p><a href='http://localhost:3000/reset-password?token=%s'>Reset Password</a></p>", token),
+		ContentType: "text/html",
 	}
 
 	return sendEmail(email)
 }
 
 func sendEmail(email Email) error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
 	auth := smtp.PlainAuth("", os.Getenv("GMAIL_EMAIL"), os.Getenv("GMAIL_PASSWORD"), "smtp.gmail.com")
 
-	msg := []byte("To: " + email.To + "\r\n" +
-		"Subject: " + email.Subject + "\r\n" +
-		"\r\n" +
-		email.Body + "\r\n")
+	headers := "To: " + email.To + "\r\n" +
+		"Subject: " + email.Subject + "\r\n"
 
-	err = smtp.SendMail("smtp.gmail.com:587", auth, email.From, []string{email.To}, msg)
+	if email.ContentType == "text/html" {
+		headers += "MIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n"
+	}
+
+	msg := []byte(headers + "\r\n" + email.Body + "\r\n")
+
+	err := smtp.SendMail("smtp.gmail.com:587", auth, email.From, []string{email.To}, msg)
 	if err != nil {
 		return err
 	}

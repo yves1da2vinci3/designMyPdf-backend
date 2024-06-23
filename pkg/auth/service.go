@@ -3,9 +3,11 @@ package auth
 import (
 	"designmypdf/api/handlers/presenter"
 	"designmypdf/config/database"
+	"designmypdf/pkg/email"
 	"designmypdf/pkg/entities"
 	"designmypdf/pkg/user"
 	"errors"
+	"fmt"
 )
 
 type Service interface {
@@ -14,6 +16,8 @@ type Service interface {
 	Logout(token string) error
 	Refresh(token string) (uint, error)
 	Update(id float64, userName string, password string) (*entities.User, error)
+	ForgotPassword(mail string) error
+	ResetPassword(token, password string) error
 }
 
 type service struct {
@@ -121,4 +125,48 @@ func (s *service) Update(id float64, userName string, password string) (*entitie
 		return nil, err
 	}
 	return user, nil
+}
+
+// ForgotPaassord implements Service.
+func (s *service) ForgotPassword(mail string) error {
+	_, err := s.repository.GetByEmail(mail)
+	if err != nil {
+		return errors.New("email not found")
+	}
+
+	token, err := GenerateResetToken(mail)
+	if err != nil {
+		return errors.New("erros generating token ")
+	}
+	err = email.SendForgotPasswordEmail(mail, token)
+	if err != nil {
+		return errors.New("erros sending  mail ")
+	}
+	return nil
+}
+
+// ResetPaassord implements Service.
+func (s *service) ResetPassword(token string, password string) error {
+	claims, err := VerifyResetToken(token)
+	if err != nil {
+		return errors.New("invalid or expired token")
+	}
+	fmt.Printf("Claim %v", claims)
+	user, err := s.repository.GetByEmail(claims.Email)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	// Update the user's password
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return errors.New("error hashing password")
+	}
+
+	user.Password = hashedPassword
+	err = s.repository.Update(user)
+	if err != nil {
+		return errors.New("error hashing password")
+	}
+	return nil
 }

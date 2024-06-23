@@ -24,6 +24,15 @@ type UpdateDTO struct {
 	UserName string `json:"userName"`
 }
 
+type ForgotPasswordDTO struct {
+	Email string `json:"email"`
+}
+
+type ResetPasswordDTO struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
 // Login is handler/controller which
 //	@Summary		Login user
 //	@Description	Login user with email and password
@@ -101,5 +110,36 @@ func Update(service auth.Service) fiber.Handler {
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
 		return c.JSON(presenter.UserSuccessResponse(result))
+	}
+}
+
+func ForgotPassword(service auth.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var requestBody ForgotPasswordDTO
+		err := c.BodyParser(&requestBody)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+		err = service.ForgotPassword(requestBody.Email)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+		}
+		return c.JSON(fiber.Map{"message": "Password reset email sent"})
+	}
+}
+func ResetPassword(service auth.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		var requestBody ResetPasswordDTO
+		err := c.BodyParser(&requestBody)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+		err = service.ResetPassword(requestBody.Token, requestBody.Password)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(presenter.UserErrorResponse(err))
+		}
+		return c.JSON(fiber.Map{"message": "Password reseted "})
 	}
 }
