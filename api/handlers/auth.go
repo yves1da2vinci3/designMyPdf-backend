@@ -3,6 +3,7 @@ package handlers
 import (
 	"designmypdf/api/handlers/presenter"
 	"designmypdf/pkg/auth"
+	"designmypdf/pkg/email"
 	"errors"
 	"net/http"
 
@@ -75,6 +76,12 @@ func Register(service auth.Service) fiber.Handler {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
+
+		email.SendSignupEmail(requestBody.Email, requestBody.UserName)
+		if err != nil {
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+
 		return c.JSON(presenter.UserSuccessResponse(result))
 	}
 }
