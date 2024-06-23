@@ -2,6 +2,7 @@ package user
 
 import (
 	"designmypdf/pkg/entities"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -9,6 +10,15 @@ import (
 // Repository is a GORM implementation of UserRepository
 type Repository struct {
 	db *gorm.DB
+}
+
+type Session struct {
+	ID        uint   `gorm:"primaryKey"`
+	UserID    uint   // Example: User ID associated with the session
+	Token     string // Example: Session token
+	ExpiresAt time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewRepository(db *gorm.DB) *Repository {
@@ -65,4 +75,41 @@ func (r *Repository) GetByUserNameAndPassword(userName string, password string) 
 		return nil, err
 	}
 	return &user, nil
+}
+
+// Create inserts a new session record into the database
+func (r *Repository) CreateSession(session *entities.Session) error {
+	return r.db.Create(session).Error
+}
+
+// FindByID retrieves a session record by its ID from the database
+func (r *Repository) FindSessionByID(id uint) (*Session, error) {
+	var session Session
+	if err := r.db.First(&session, id).Error; err != nil {
+		return nil, err
+	}
+	return &session, nil
+}
+
+// FindByID retrieves a session record by its ID from the database
+func (r *Repository) FindSessionByUserID(userID uint) (*entities.Session, error) {
+	var session entities.Session
+	if err := r.db.Where("user_id = ?", userID).First(&session).Error; err != nil {
+		return nil, err
+	}
+	return &session, nil
+}
+
+// FindByID retrieves a session record by its ID from the database
+func (r *Repository) FindSessionByToken(refreshToken string) (*entities.Session, error) {
+	var session entities.Session
+	if err := r.db.Where("refresh_token = ?", refreshToken).First(&session).Error; err != nil {
+		return nil, err
+	}
+	return &session, nil
+}
+
+// Delete removes a session record from the database by its ID
+func (r *Repository) DeleteSession(id uint) error {
+	return r.db.Delete(&Session{}, id).Error
 }

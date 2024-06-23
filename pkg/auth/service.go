@@ -13,9 +13,11 @@ import (
 type Service interface {
 	Login(email string, password string) (*presenter.LoginResponse, error)
 	Register(userName string, email string, password string) (*entities.User, error)
-	Logout(token string) error
-	Refresh(token string) (uint, error)
+	Logout(sessionID uint) error
+	Refresh(sessionID uint) (string, error)
 	Update(id float64, userName string, password string) (*entities.User, error)
+	SetSession(userID uint, refreshToken string) error
+	GetSessionByToken(token string) (*entities.Session, error)
 	ForgotPassword(mail string) error
 	ResetPassword(token, password string) error
 }
@@ -44,7 +46,13 @@ func (s *service) Login(email string, password string) (*presenter.LoginResponse
 		return nil, errors.New("invalid password")
 	}
 	accessToken, err := GenerateAccessToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
 	refreshToken, err := GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
 
 	loginResponse := &presenter.LoginResponse{
 		Data:         user,
@@ -57,26 +65,36 @@ func (s *service) Login(email string, password string) (*presenter.LoginResponse
 }
 
 // Logout implements Service.
-func (s *service) Logout(token string) error {
-	panic("unimplemented")
+func (s *service) Logout(sessionID uint) error {
+	session, _ := s.repository.FindSessionByID(sessionID)
+
+	if session == nil {
+		return errors.New("session not found")
+	}
+	err := s.repository.DeleteSession(sessionID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Refresh implements Service.
-func (s *service) Refresh(token string) (uint, error) {
-	isValid, err := ValidateRefreshToken(token)
+func (s *service) Refresh(sessionID uint) (string, error) {
+	session, err := s.repository.FindSessionByID(sessionID)
 	if err != nil {
-		return 0, err
+		return "", errors.New("session not found")
 	}
 
-	if !isValid {
-		return 0, errors.New("invalid token")
+	claims, err := DecodeRefreshToken(session.Token)
+	if err != nil {
+		return "", errors.New("error decoding refresh token")
 	}
 
-	claims, err := DecodeRefreshToken(token)
+	newAccessToken, err := GenerateAccessToken(claims.Content)
 	if err != nil {
-		return 0, errors.New("error on Generating refresh token")
+		return "", errors.New("error generating new access token")
 	}
-	return claims.Content, nil
+	return newAccessToken, nil
 }
 
 // Register implements Service.
@@ -128,7 +146,7 @@ func (s *service) Update(id float64, userName string, password string) (*entitie
 	return user, nil
 }
 
-// ForgotPaassord implements Service.
+// ForgotPassword implements Service.
 func (s *service) ForgotPassword(mail string) error {
 	_, err := s.repository.GetByEmail(mail)
 	if err != nil {
@@ -137,17 +155,40 @@ func (s *service) ForgotPassword(mail string) error {
 
 	token, err := GenerateResetToken(mail)
 	if err != nil {
-		return errors.New("erros generating token ")
+		return errors.New("error generating token")
 	}
 	err = email.SendForgotPasswordEmail(mail, token)
 	if err != nil {
-		return errors.New("erros sending  mail ")
+		return errors.New("error sending email")
 	}
 	return nil
 }
 
-// ResetPaassord implements Service.
-func (s *service) ResetPassword(token string, password string) error {
+// SetSession implements Service.
+func (s *service) SetSession(userID uint, refreshToken string) error {
+	session, err := s.repository.FindSessionByUserID(userID)
+	if err != nil {
+		newSession := &entities.Session{
+			UserID:       userID,
+			RefreshToken: refreshToken,
+		}
+		err = s.repository.CreateSession(newSession)
+		if err != nil {
+			return errors.New("error creating session")
+		}
+	}
+	if session != nil {
+		err = s.repository.DeleteSession(session.ID)
+		if err != nil {
+			return errors.New("error deleting session")
+		}
+	}
+
+	return nil
+}
+
+// ResetPassword implements Service.
+func (s *service) ResetPassword(token, password string) error {
 	claims, err := VerifyResetToken(token)
 	if err != nil {
 		return errors.New("invalid or expired token")
@@ -167,7 +208,18 @@ func (s *service) ResetPassword(token string, password string) error {
 	user.Password = hashedPassword
 	err = s.repository.Update(user)
 	if err != nil {
-		return errors.New("error hashing password")
+		return errors.New("error updating password")
 	}
 	return nil
+}
+
+func (s *service) GetSessionByToken(token string) (*entities.Session, error) {
+	session, err := s.repository.FindSessionByToken(token)
+	if err != nil {
+		return nil, errors.New("error finding session")
+	}
+	if session == nil {
+		return nil, errors.New("session not found")
+	}
+	return session, nil
 }

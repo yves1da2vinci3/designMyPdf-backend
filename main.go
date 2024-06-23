@@ -3,15 +3,16 @@ package main
 import (
 	"designmypdf/api/routes"
 	"designmypdf/config/database"
-	"designmypdf/pkg/auth"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "designmypdf/docs"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 )
@@ -23,26 +24,22 @@ func SetupFiberServer() {
 	}
 
 	app := fiber.New()
+	// ** setup CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:3000",
+		AllowHeaders:     "Authorization, Content-Type",
+		AllowMethods:     "GET, POST, PUT, DELETE",
+		AllowCredentials: true,
+	}))
+	// ** setup rate limiting
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+	}))
 
-	//** setup session middleware
-	// Initialize the session database schema
-	auth.InitSessionDB()
-
-	// Get the session store
-	sessionStore := auth.GetSessionStore()
-	// Set up session middleware
-	store := session.New(session.Config{
-		Storage: sessionStore,
-	})
-	// Middleware to use session
-	app.Use(func(c *fiber.Ctx) error {
-		sess, err := store.Get(c)
-		if err != nil {
-			return err
-		}
-		c.Locals("session", sess)
-		return c.Next()
-	})
 	// Setup Swagger
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
 

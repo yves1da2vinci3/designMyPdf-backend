@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/session"
 )
 
 type LoginDTO struct {
@@ -27,6 +26,9 @@ type UpdateDTO struct {
 
 type ForgotPasswordDTO struct {
 	Email string `json:"email"`
+}
+type SessionDTO struct {
+	RefreshToken string `json:"refreshToken"`
 }
 
 type ResetPasswordDTO struct {
@@ -64,15 +66,14 @@ func Login(service auth.Service) fiber.Handler {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(err))
 		}
-		// Store refresh token in session
-		sess := c.Locals("session").(*session.Session)
-		sess.Set("refreshToken", result.RefreshToken)
-		sess.Set("userID", result.Data.ID)
-		if err := sess.Save(); err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Could not save session",
-			})
+
+		// Handle session and set cookie
+		err = service.SetSession(result.Data.ID, result.RefreshToken)
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return c.JSON(presenter.UserErrorResponse(err))
 		}
+
 		return c.JSON(presenter.LoginSuccessResponse(result))
 	}
 }
@@ -88,7 +89,7 @@ func Register(service auth.Service) fiber.Handler {
 		if requestBody.Email == "" || requestBody.Password == "" || requestBody.UserName == "" {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.UserErrorResponse(errors.New(
-				"please specify email and password")))
+				"please specify email, password, and username")))
 		}
 		result, err := service.Register(requestBody.UserName, requestBody.Email, requestBody.Password)
 		if err != nil {
@@ -138,6 +139,7 @@ func ForgotPassword(service auth.Service) fiber.Handler {
 		return c.JSON(fiber.Map{"message": "Password reset email sent"})
 	}
 }
+
 func ResetPassword(service auth.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var requestBody ResetPasswordDTO
@@ -150,47 +152,66 @@ func ResetPassword(service auth.Service) fiber.Handler {
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(presenter.UserErrorResponse(err))
 		}
-		return c.JSON(fiber.Map{"message": "Password reseted "})
+		return c.JSON(fiber.Map{"message": "Password reset"})
 	}
 }
 
 func RefreshToken(service auth.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Get session
-		sess := c.Locals("session").(*session.Session)
-		refreshToken := sess.Get("refreshToken")
-		userID := sess.Get("userID")
-		if refreshToken == nil || userID == nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "No refresh token or user ID found",
-			})
-		}
-
-		// Validate and decode refresh token
-		claims, err := auth.DecodeRefreshToken(refreshToken.(string))
+		// Get the refresh token from the request
+		var requestBody SessionDTO
+		err := c.BodyParser(&requestBody)
 		if err != nil {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid refresh token",
-			})
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.UserErrorResponse(err))
 		}
 
-		// Check if the user ID matches
-		if claims.Content != userID {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Invalid user ID",
-			})
+		refreshToken := requestBody.RefreshToken
+		if refreshToken == "" {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "No refresh token provided"})
 		}
 
-		// Generate new access token
-		accessToken, err := auth.GenerateAccessToken(claims.Content)
+		session, err := service.GetSessionByToken(refreshToken)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Could not generate access token",
-			})
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid refresh token"})
+		}
+
+		accessToken, err := service.Refresh(session.ID)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Could not refresh token"})
 		}
 
 		return c.JSON(fiber.Map{
 			"accessToken": accessToken,
 		})
+	}
+}
+
+func Logout(service auth.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get the refresh token from the request
+		var requestBody SessionDTO
+		err := c.BodyParser(&requestBody)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.UserErrorResponse(err))
+		}
+
+		refreshToken := requestBody.RefreshToken
+		if refreshToken == "" {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "No refresh token provided"})
+		}
+
+		session, err := service.GetSessionByToken(refreshToken)
+		if err != nil {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid refresh token"})
+		}
+
+		err = service.Logout(session.ID)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Logout failed"})
+		}
+
+		return c.JSON(fiber.Map{"message": "Logout successful"})
 	}
 }
