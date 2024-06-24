@@ -4,6 +4,7 @@ import (
 	"designmypdf/api/handlers"
 	"designmypdf/pkg/auth"
 	"designmypdf/pkg/namespace"
+	"designmypdf/pkg/template"
 	"designmypdf/pkg/user"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,4 +22,7 @@ func SetupRoutes(app *fiber.App) {
 	// Namepsace
 	namepsaceService := namespace.NewService(namespace.Repository{})
 	NampesaceRouter(api, namepsaceService)
+	// Template
+	templateService := template.NewService(template.Repository{})
+	TemplateRouter(api, templateService)
 }

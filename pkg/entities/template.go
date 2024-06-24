@@ -18,7 +18,7 @@ type Template struct {
 	Content     string         `json:"content"`
 	Framework   FrameworkType  `json:"framework"`
 	Variables   datatypes.JSON `json:"variables" gorm:"type:json"`
-	Fonts       MultiString    `json:"fonts" gorm:"type:text"`
+	Fonts       MultiString    `json:"fonts"`
 	Logs        []Log          `gorm:"constraint:OnDelete:SET NULL;foreignKey:TemplateID"`
 	NamespaceID uint
 }

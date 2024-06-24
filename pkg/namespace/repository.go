@@ -44,7 +44,7 @@ func (r *Repository) GetAll() ([]*entities.Namespace, error) {
 }
 func (r *Repository) GetAllUserNamespaces(userID uint) (*[]entities.Namespace, error) {
 	var namespaces *[]entities.Namespace
-	if err := r.db.Where("user_id = ?", userID).Find(&namespaces).Error; err != nil {
+	if err := r.db.Where("user_id = ?", userID).Preload("Templates").Find(&namespaces).Error; err != nil {
 		return nil, err
 	}
 	return namespaces, nil
