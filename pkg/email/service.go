@@ -36,11 +36,20 @@ func SendSignupEmail(to, userName string) error {
 }
 
 func SendForgotPasswordEmail(to, token string) error {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file: %s", err)
+	}
+	link := "http://localhost:3000/reset-password"
+	stage := os.Getenv("GO_ENV")
+	if stage == "production" {
+		link = "https://transactionalclone.netlify.app/reset-password"
+	}
 	email := Email{
 		From:        os.Getenv("GMAIL_EMAIL"),
 		To:          to,
 		Subject:     "DesignMyPDF Password Reset",
-		Body:        fmt.Sprintf("<p>To reset your password, click the following link:</p><p><a href='http://localhost:3000/reset-password?token=%s'>Reset Password</a></p>", token),
+		Body:        fmt.Sprintf("<p>To reset your password, click the following link:</p><p><a href='%s?token=%s'>Reset Password</a></p>", link, token),
 		ContentType: "text/html",
 	}
 
