@@ -13,6 +13,7 @@ type Service interface {
 	Create(name string, content string, variables datatypes.JSON, fonts entities.MultiString, namespaceID uint) (*entities.Template, error)
 	Delete(ID uint) (*entities.Template, error)
 	GetUserTemplates(userID uint) (*[]entities.Template, error)
+	Get(ID uint) (*entities.Template, error)
 	Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString) (*entities.Template, error)
 	ChangeTemplateNamespace(ID uint, NamespaceID uint) error
 }
@@ -99,4 +100,14 @@ func (s *service) ChangeTemplateNamespace(ID uint, NamespaceID uint) error {
 		return nil
 	}
 	return nil
+}
+
+// Update updates the name of the template with the given ID.
+func (s *service) Get(ID uint) (*entities.Template, error) {
+	template, err := s.repository.Get(ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return template, nil
 }

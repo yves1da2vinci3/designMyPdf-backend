@@ -136,3 +136,20 @@ func GetTemplates(templateService template.Service) fiber.Handler {
 		return c.JSON(presenter.TemplatesSuccessResponse(result))
 	}
 }
+func GetTemplate(templateService template.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		templateIDString := c.Params("templateID")
+
+		templateID, err := strconv.ParseUint(templateIDString, 10, 32)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid template ID")))
+		}
+		result, err := templateService.Get(uint(templateID))
+		if err != nil {
+			c.Status(http.StatusInternalServerError)
+			return c.JSON(presenter.TemplateErrorResponse(err))
+		}
+		return c.JSON(presenter.TemplateSuccessResponse(result))
+	}
+}
