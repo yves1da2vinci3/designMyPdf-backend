@@ -26,7 +26,7 @@ func SetupFiberServer() {
 	app := fiber.New()
 	// ** setup CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000,https://transactionalclone.netlify.app",
+		AllowOrigins:     "http://localhost:3000,https://transactional-clone-frontend.vercel.app/",
 		AllowHeaders:     "Authorization, Content-Type",
 		AllowMethods:     "GET, POST, PUT, DELETE",
 		AllowCredentials: true,
