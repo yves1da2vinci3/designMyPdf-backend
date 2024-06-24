@@ -85,7 +85,7 @@ func (s *service) Refresh(sessionID uint) (string, error) {
 		return "", errors.New("session not found")
 	}
 
-	claims, err := DecodeRefreshToken(session.Token)
+	claims, err := DecodeRefreshToken(session.RefreshToken)
 	if err != nil {
 		return "", errors.New("error decoding refresh token")
 	}

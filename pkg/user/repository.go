@@ -83,8 +83,8 @@ func (r *Repository) CreateSession(session *entities.Session) error {
 }
 
 // FindByID retrieves a session record by its ID from the database
-func (r *Repository) FindSessionByID(id uint) (*Session, error) {
-	var session Session
+func (r *Repository) FindSessionByID(id uint) (*entities.Session, error) {
+	var session entities.Session
 	if err := r.db.First(&session, id).Error; err != nil {
 		return nil, err
 	}
