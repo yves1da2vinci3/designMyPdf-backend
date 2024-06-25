@@ -4,6 +4,7 @@ import (
 	"designmypdf/api/handlers"
 	"designmypdf/pkg/auth"
 	"designmypdf/pkg/key"
+	"designmypdf/pkg/logs"
 	"designmypdf/pkg/namespace"
 	"designmypdf/pkg/template"
 	"designmypdf/pkg/user"
@@ -29,4 +30,7 @@ func SetupRoutes(app *fiber.App) {
 	// key
 	keyService := key.NewService(key.Repository{})
 	KeyRouter(api, keyService)
+	// Logs
+	logService := logs.NewService(logs.Repository{})
+	LogRouter(api, logService)
 }
