@@ -39,17 +39,7 @@ func SetupFiberServer() {
 			return c.IP()
 		},
 	}))
-	// Test firebase upload
 
-	// path := "./designMyPDF-diagram.png"
-
-	// bucket, err := storage.InitializeFirebaseStorage()
-	// if err != nil {
-	// 	log.Fatalf("Error initializing firebase storage: %v", err)
-	// }
-	// url, err := storage.UploadFile(bucket, path, "tests/doumgbalolo-diagram.png")
-
-	// fmt.Printf("url %s", url)
 	// Setup Swagger
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
 

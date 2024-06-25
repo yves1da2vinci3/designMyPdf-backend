@@ -99,6 +99,7 @@ func CheckKey(service key.Service) fiber.Handler {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid key"})
 		}
 
+		c.Locals("key", key.ID)
 		c.Locals("userID", key.UserID)
 		return c.Next()
 	}

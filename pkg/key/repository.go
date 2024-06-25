@@ -62,6 +62,16 @@ func (r *Repository) GetKeyByValue(keyValue string) (*entities.Key, error) {
 	return &key, nil
 }
 
+// IncreaseUsageCount increments the usage count of a key
+func (r *Repository) IncreaseUsageCount(id uint) error {
+	var key entities.Key
+	if err := r.db.First(&key, id).Error; err != nil {
+		return err
+	}
+	key.KeyCountUsed++
+	return r.Update(&key)
+}
+
 func generateKey() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const length = 32

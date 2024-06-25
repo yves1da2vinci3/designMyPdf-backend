@@ -14,6 +14,7 @@ type Service interface {
 	Update(ID uint, name string, keyCount int) (*entities.Key, error)
 	GetKeyByValue(keyValue string) (*entities.Key, error)
 	ValidateKey(keyValue string) (bool, error)
+	IncreaseUsageCount(ID uint) error
 }
 
 type service struct {
@@ -100,4 +101,12 @@ func (s *service) ValidateKey(keyValue string) (bool, error) {
 		return false, errors.New("key usage limit reached")
 	}
 	return true, nil
+}
+
+func (s *service) IncreaseUsageCount(ID uint) error {
+	err := s.repository.IncreaseUsageCount(ID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

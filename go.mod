@@ -3,8 +3,12 @@ module designmypdf
 go 1.22.2
 
 require (
+	cloud.google.com/go/storage v1.42.0
 	firebase.google.com/go/v4 v4.14.1
 	github.com/AlecAivazis/survey/v2 v2.3.7
+	github.com/aymerick/raymond v2.0.2+incompatible
+	github.com/chromedp/cdproto v0.0.0-20240614221651-cc28c8fb63e7
+	github.com/chromedp/chromedp v0.9.5
 	github.com/gofiber/contrib/jwt v1.0.9
 	github.com/gofiber/fiber/v2 v2.52.4
 	github.com/golang-jwt/jwt/v5 v5.2.1
@@ -26,11 +30,11 @@ require (
 	cloud.google.com/go/firestore v1.15.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect
 	cloud.google.com/go/longrunning v0.5.7 // indirect
-	cloud.google.com/go/storage v1.42.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/chromedp/sysutil v1.0.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -38,6 +42,9 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect

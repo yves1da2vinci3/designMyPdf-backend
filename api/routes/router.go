@@ -33,4 +33,7 @@ func SetupRoutes(app *fiber.App) {
 	// Logs
 	logService := logs.NewService(logs.Repository{})
 	LogRouter(api, logService)
+
+	// handle PDF generation
+	api.Post("/generate-pdf/:templateId", handlers.GeneratePdf)
 }
