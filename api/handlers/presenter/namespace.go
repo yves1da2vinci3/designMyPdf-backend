@@ -6,12 +6,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-// Handler
-func NamespaceSuccessResponse(Namespace *entities.Namespace) *fiber.Map {
+type Namespace struct {
+	UserID uint   `json:"user_id"`
+	Name   string `json:"name"`
+	ID     uint
+}
 
-	NamespaceData := entities.Namespace{
-		UserID: Namespace.UserID,
-		Name:   Namespace.Name,
+// Handler
+func NamespaceSuccessResponse(namespace *entities.Namespace) *fiber.Map {
+	NamespaceData := Namespace{
+		UserID: namespace.UserID,
+		Name:   namespace.Name,
+		ID:     namespace.ID,
 	}
 	return &fiber.Map{
 		"status":    true,
