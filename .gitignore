@@ -1,4 +1,7 @@
 .env
 *.db
+# Exclude all .json files
 *.json
-tmp
+
+# Exclude the tmp folder
+tmp/
