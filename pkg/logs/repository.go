@@ -33,6 +33,13 @@ func (r *Repository) GetLogsByTimeRange(start, end time.Time) (*[]entities.Log, 
 func (r *Repository) GetLogsByUserID(userID uint) (*[]entities.Log, error) {
 	var logs []entities.Log
 	err := r.db.
+		Model(&entities.Log{}).
+		Preload("Template", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		}).
+		Preload("Key", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, value")
+		}).
 		Joins("JOIN keys ON keys.id = logs.key_id").
 		Where("keys.user_id = ?", userID).
 		Find(&logs).Error

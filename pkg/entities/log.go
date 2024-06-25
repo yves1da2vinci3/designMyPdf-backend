@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"gorm.io/datatypes"
-	"gorm.io/gorm"
 )
 
 // StatusCode represents the HTTP status code type
@@ -18,12 +17,14 @@ const (
 
 // Log represents a log entry in the database
 type Log struct {
-	gorm.Model
+	ID           uint           `gorm:"primaryKey"`
+	KeyID        uint           `gorm:"not null"`
+	Key          Key            `gorm:"foreignKey:KeyID" json:"key"`
+	TemplateID   uint           `gorm:"not null"`
+	Template     Template       `gorm:"foreignKey:TemplateID" json:"template"`
 	CalledAt     time.Time      `json:"called_at"`
 	RequestBody  datatypes.JSON `json:"request_body"`
 	ResponseBody datatypes.JSON `json:"response_body"`
 	StatusCode   StatusCode     `json:"status_code"`
-	ErrorMessage string         `json:"error_message,omitempty"`
-	TemplateID   uint           `json:"template_id"`
-	KeyID        uint           `json:"key_id"`
+	ErrorMessage string         `json:"error_message"`
 }
