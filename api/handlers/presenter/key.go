@@ -2,17 +2,19 @@ package presenter
 
 import (
 	"designmypdf/pkg/entities"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type KeyResponse struct {
-	ID           uint   `json:"id"`
-	UserID       uint   `json:"user_id"`
-	Value        string `json:"value"`
-	Name         string `json:"name"`
-	KeyCount     int    `json:"key_count"`
-	KeyCountUsed int    `json:"key_count_used"`
+	ID           uint      `json:"id"`
+	UserID       uint      `json:"user_id"`
+	Value        string    `json:"value"`
+	Name         string    `json:"name"`
+	KeyCount     int       `json:"key_count"`
+	KeyCountUsed int       `json:"key_count_used"`
+	CreateAt     time.Time `json:"created_at"`
 }
 
 func KeySuccessResponse(key *entities.Key) *fiber.Map {
@@ -23,6 +25,7 @@ func KeySuccessResponse(key *entities.Key) *fiber.Map {
 		Name:         key.Name,
 		KeyCount:     key.KeyCount,
 		KeyCountUsed: key.KeyCountUsed,
+		CreateAt:     key.CreatedAt,
 	}
 	return &fiber.Map{
 		"status": true,
@@ -41,6 +44,7 @@ func KeysSuccessResponse(keys []entities.Key) *fiber.Map {
 			Name:         key.Name,
 			KeyCount:     key.KeyCount,
 			KeyCountUsed: key.KeyCountUsed,
+			CreateAt:     key.CreatedAt,
 		}
 	}
 	return &fiber.Map{
