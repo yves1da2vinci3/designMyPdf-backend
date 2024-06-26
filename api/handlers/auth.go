@@ -176,7 +176,7 @@ func RefreshToken(service auth.Service) fiber.Handler {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{"message": "Invalid refresh token"})
 		}
 
-		accessToken, err := service.Refresh(session.ID)
+		accessToken, err := service.Refresh(session.RefreshToken)
 		if err != nil {
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{"message": "Could not refresh token"})
 		}

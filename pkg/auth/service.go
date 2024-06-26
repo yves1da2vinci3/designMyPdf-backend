@@ -14,7 +14,7 @@ type Service interface {
 	Login(email string, password string) (*presenter.LoginResponse, error)
 	Register(userName string, email string, password string) (*entities.User, error)
 	Logout(sessionID uint) error
-	Refresh(sessionID uint) (string, error)
+	Refresh(RefreshToken string) (string, error)
 	Update(id float64, userName string, password string) (*entities.User, error)
 	SetSession(userID uint, refreshToken string) error
 	GetSessionByToken(token string) (*entities.Session, error)
@@ -66,11 +66,7 @@ func (s *service) Login(email string, password string) (*presenter.LoginResponse
 
 // Logout implements Service.
 func (s *service) Logout(sessionID uint) error {
-	session, _ := s.repository.FindSessionByID(sessionID)
 
-	if session == nil {
-		return errors.New("session not found")
-	}
 	err := s.repository.DeleteSession(sessionID)
 	if err != nil {
 		return err
@@ -79,13 +75,9 @@ func (s *service) Logout(sessionID uint) error {
 }
 
 // Refresh implements Service.
-func (s *service) Refresh(sessionID uint) (string, error) {
-	session, err := s.repository.FindSessionByID(sessionID)
-	if err != nil {
-		return "", errors.New("session not found")
-	}
+func (s *service) Refresh(RefreshToken string) (string, error) {
 
-	claims, err := DecodeRefreshToken(session.RefreshToken)
+	claims, err := DecodeRefreshToken(RefreshToken)
 	if err != nil {
 		return "", errors.New("error decoding refresh token")
 	}
