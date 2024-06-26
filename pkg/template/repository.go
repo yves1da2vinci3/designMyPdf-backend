@@ -26,6 +26,13 @@ func (r *Repository) Get(id uint) (*entities.Template, error) {
 	}
 	return &template, nil
 }
+func (r *Repository) GetByUUID(uuid string) (*entities.Template, error) {
+	var template entities.Template
+	if err := r.db.Where("uuid = ?", uuid).First(&template).Error; err != nil {
+		return nil, err
+	}
+	return &template, nil
+}
 
 func (r *Repository) Update(template *entities.Template) error {
 	return r.db.Save(template).Error

@@ -37,13 +37,13 @@ func GeneratePdf(c *fiber.Ctx) error {
 	}
 
 	// Get the Template
-	templateID, err := c.ParamsInt("templateId")
-	if err != nil {
-		return logAndRespond(c, keyEntity, nil, fmt.Sprintf("failed to parse templateId: %v", err), fiber.StatusBadRequest)
+	templateID := c.Params("templateId")
+	if templateID == "" {
+		return logAndRespond(c, keyEntity, nil, "No template provided", fiber.StatusBadRequest)
 	}
 
 	templateService := template.NewService(template.Repository{})
-	templateEntity, err := templateService.Get(uint(templateID))
+	templateEntity, err := templateService.GetByUUID(templateID)
 	if err != nil {
 		return logAndRespond(c, keyEntity, nil, fmt.Sprintf("failed to get template: %v", err), fiber.StatusInternalServerError)
 	}
@@ -130,7 +130,7 @@ func GeneratePdf(c *fiber.Ctx) error {
 	}
 
 	logEntry := &entities.Log{
-		TemplateID:   uint(templateID),
+		TemplateID:   templateEntity.ID,
 		KeyID:        keyEntity.ID,
 		CalledAt:     time.Now(),
 		RequestBody:  c.Body(),
