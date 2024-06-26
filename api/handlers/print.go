@@ -158,11 +158,20 @@ func logAndRespond(c *fiber.Ctx, key *entities.Key, template *entities.Template,
 		ResponseBody: datatypes.JSON([]byte(fmt.Sprintf(`{"message": "%s"}`, errorMessage))),
 		StatusCode:   entities.StatusCode(statusCode),
 		ErrorMessage: errorMessage,
-		KeyID:        key.ID,
+	}
+
+	if key != nil {
+		logEntry.KeyID = key.ID
+	} else {
+		// Handle the case where key is nil
+		logEntry.KeyID = 0 // or some other default value or handling
 	}
 
 	if template != nil {
 		logEntry.TemplateID = template.ID
+	} else {
+		// Handle the case where template is nil
+		logEntry.TemplateID = 0 // or some other default value or handling
 	}
 
 	err := logService.CreateLog(logEntry)
