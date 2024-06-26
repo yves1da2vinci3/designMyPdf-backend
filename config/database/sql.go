@@ -43,7 +43,7 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		return nil, err
 	}
 	// Make migration
-	db.AutoMigrate(&entities.User{}, &entities.Namespace{}, &entities.Template{}, &entities.Key{}, &entities.Log{}, &entities.Session{}, &entities.Session{})
+	db.AutoMigrate(&entities.User{}, &entities.Namespace{}, &entities.Template{}, &entities.Key{}, &entities.Log{}, &entities.Session{})
 
 	return db, nil
 }
