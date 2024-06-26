@@ -101,7 +101,7 @@ func GeneratePdf(c *fiber.Ctx) error {
 	}
 
 	// Upload PDF file to Firebase Storage
-	storagePath := "/templates/" + id.String() + ".pdf"
+	storagePath := "templates/" + id.String() + ".pdf"
 	url, err := storage.UploadFile(bucket, outputPath, storagePath)
 	if err != nil {
 		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to upload PDF to Firebase Storage: %v", err), fiber.StatusInternalServerError)
