@@ -43,7 +43,7 @@ func SendForgotPasswordEmail(to, token string) error {
 	link := "http://localhost:3000/reset-password"
 	stage := os.Getenv("GO_ENV")
 	if stage == "production" {
-		link = "https://transactional-clone-frontend.vercel.app/reset-password"
+		link = "https://designmypdf.vercel.app/reset-password"
 	}
 	email := Email{
 		From:        os.Getenv("GMAIL_EMAIL"),
