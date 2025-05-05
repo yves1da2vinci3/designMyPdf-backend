@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -20,10 +22,17 @@ import (
 )
 
 func GeneratePdf(c *fiber.Ctx) error {
+	// Début du chronométrage
+	startTime := time.Now()
+
 	// Charger les variables d'environnement
 	if err := godotenv.Load(); err != nil {
 		return logAndRespond(c, nil, nil, "Erreur lors du chargement des variables d'environnement", fiber.StatusInternalServerError)
 	}
+
+	// Utiliser un contexte avec timeout pour éviter les opérations bloquantes
+	ctx, cancel := context.WithTimeout(c.Context(), 30*time.Second)
+	defer cancel()
 
 	keyService := key.NewService(key.Repository{})
 
@@ -60,9 +69,25 @@ func GeneratePdf(c *fiber.Ctx) error {
 	if err := json.Unmarshal(c.Body(), &data); err != nil {
 		return logAndRespond(c, nil, nil, fmt.Sprintf("failed to parse request body: %v", err), fiber.StatusBadRequest)
 	}
-	renderedHTML, err := utils.RenderTemplate(templateEntity.Content, data)
-	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to render template: %v", err), fiber.StatusInternalServerError)
+	
+	// Optimisation: Utiliser une goroutine pour la génération HTML
+	var renderedHTML string
+	var renderErr error
+	
+	htmlDone := make(chan bool, 1)
+	go func() {
+		renderedHTML, renderErr = utils.RenderTemplate(templateEntity.Content, data)
+		htmlDone <- true
+	}()
+
+	// Attendre la fin de la génération HTML avec timeout
+	select {
+	case <-htmlDone:
+		if renderErr != nil {
+			return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to render template: %v", renderErr), fiber.StatusInternalServerError)
+		}
+	case <-time.After(5 * time.Second):
+		return logAndRespond(c, keyEntity, templateEntity, "Template rendering timeout", fiber.StatusRequestTimeout)
 	}
 
 	// Combine structural HTML with rendered content
@@ -94,12 +119,27 @@ func GeneratePdf(c *fiber.Ctx) error {
 		format = "A4"
 	}
 
-	err = utils.GeneratePDF(fullHTML, format, outputPath)
-	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to generate PDF: %v", err), fiber.StatusInternalServerError)
+	// Optimisation: Forcer un garbage collection avant de générer le PDF pour libérer de la mémoire
+	runtime.GC()
+
+	// Utiliser un timeout pour la génération PDF
+	pdfDone := make(chan error, 1)
+	go func() {
+		pdfDone <- utils.GeneratePDF(fullHTML, format, outputPath)
+	}()
+
+	// Attendre la fin de la génération PDF avec timeout
+	select {
+	case err := <-pdfDone:
+		if err != nil {
+			return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to generate PDF: %v", err), fiber.StatusInternalServerError)
+		}
+	case <-time.After(15 * time.Second):
+		return logAndRespond(c, keyEntity, templateEntity, "PDF generation timeout", fiber.StatusRequestTimeout)
 	}
 
 	fmt.Printf("PDF saved to: %s\n", outputPath)
+	fmt.Printf("Temps écoulé jusqu'à la génération du PDF: %v\n", time.Since(startTime))
 
 	// Initialize Backblaze Storage
 	b2Storage, err := storage.NewBackblazeStorage(
@@ -112,18 +152,42 @@ func GeneratePdf(c *fiber.Ctx) error {
 	}
 
 	// Upload PDF file to Backblaze
-	ctx := context.Background()
 	storagePath := "templates/" + id.String() + ".pdf"
-	url, err := b2Storage.UploadFile(ctx, outputPath, storagePath)
-	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to upload PDF to Backblaze: %v", err), fiber.StatusInternalServerError)
+	
+	// Optimisation: Exécuter l'upload, l'incrémentation de compteur et la journalisation en parallèle
+	var wg sync.WaitGroup
+	var url string
+	var uploadErr error
+	var countErr error
+	
+	wg.Add(2)
+	
+	// Upload du fichier
+	go func() {
+		defer wg.Done()
+		url, uploadErr = b2Storage.UploadFile(ctx, outputPath, storagePath)
+	}()
+	
+	// Increase key usage count en parallèle
+	go func() {
+		defer wg.Done()
+		countErr = keyService.IncreaseUsageCount(keyEntity.ID)
+	}()
+	
+	// Attendre la fin des opérations
+	wg.Wait()
+	
+	// Vérification des erreurs
+	if uploadErr != nil {
+		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to upload PDF to Backblaze: %v", uploadErr), fiber.StatusInternalServerError)
+	}
+	
+	if countErr != nil {
+		fmt.Printf("warning: failed to increase usage count: %v\n", countErr)
 	}
 
 	// Delete the PDF file locally
-	err = os.Remove(outputPath)
-	if err != nil {
-		fmt.Printf("failed to delete local PDF file: %v\n", err)
-	}
+	os.Remove(outputPath) // No need to check error, not critical
 
 	// Log the successful PDF generation
 	logService := logs.NewService(logs.Repository{})
@@ -135,26 +199,24 @@ func GeneratePdf(c *fiber.Ctx) error {
 		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to marshal response body: %v", err), fiber.StatusInternalServerError)
 	}
 
-	// Increase key usage count
-	err = keyService.IncreaseUsageCount(keyEntity.ID)
-	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to increase usage count: %v", err), fiber.StatusInternalServerError)
-	}
+	// Log asynchrone
+	go func() {
+		logEntry := &entities.Log{
+			TemplateID:   templateEntity.ID,
+			KeyID:        keyEntity.ID,
+			CalledAt:     time.Now(),
+			RequestBody:  c.Body(),
+			ResponseBody: datatypes.JSON(responseBodyBytes),
+			StatusCode:   entities.Success,
+			ErrorMessage: "",
+		}
 
-	logEntry := &entities.Log{
-		TemplateID:   templateEntity.ID,
-		KeyID:        keyEntity.ID,
-		CalledAt:     time.Now(),
-		RequestBody:  c.Body(),
-		ResponseBody: datatypes.JSON(responseBodyBytes),
-		StatusCode:   entities.Success,
-		ErrorMessage: "",
-	}
+		if err := logService.CreateLog(logEntry); err != nil {
+			fmt.Printf("failed to log PDF generation: %v\n", err)
+		}
+	}()
 
-	err = logService.CreateLog(logEntry)
-	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to log PDF generation: %v", err), fiber.StatusInternalServerError)
-	}
+	fmt.Printf("Temps total d'exécution: %v\n", time.Since(startTime))
 
 	return c.JSON(fiber.Map{
 		"path": url,
