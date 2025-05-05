@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"designmypdf/config/storage"
+	"context"
 	"designmypdf/pkg/entities"
 	"designmypdf/pkg/key"
 	"designmypdf/pkg/logs"
+	"designmypdf/pkg/storage"
 	"designmypdf/pkg/template"
 	"designmypdf/utils"
 	"encoding/json"
@@ -14,10 +15,16 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	"gorm.io/datatypes"
 )
 
 func GeneratePdf(c *fiber.Ctx) error {
+	// Charger les variables d'environnement
+	if err := godotenv.Load(); err != nil {
+		return logAndRespond(c, nil, nil, "Erreur lors du chargement des variables d'environnement", fiber.StatusInternalServerError)
+	}
+
 	keyService := key.NewService(key.Repository{})
 
 	// Handle Key
@@ -94,17 +101,22 @@ func GeneratePdf(c *fiber.Ctx) error {
 
 	fmt.Printf("PDF saved to: %s\n", outputPath)
 
-	// Initialize Firebase Storage
-	bucket, err := storage.InitializeFirebaseStorage()
+	// Initialize Backblaze Storage
+	b2Storage, err := storage.NewBackblazeStorage(
+		os.Getenv("B2_ACCOUNT_ID"),
+		os.Getenv("B2_APPLICATION_KEY"),
+		os.Getenv("B2_BUCKET_NAME"),
+	)
 	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to initialize Firebase storage: %v", err), fiber.StatusInternalServerError)
+		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to initialize Backblaze storage: %v", err), fiber.StatusInternalServerError)
 	}
 
-	// Upload PDF file to Firebase Storage
+	// Upload PDF file to Backblaze
+	ctx := context.Background()
 	storagePath := "templates/" + id.String() + ".pdf"
-	url, err := storage.UploadFile(bucket, outputPath, storagePath)
+	url, err := b2Storage.UploadFile(ctx, outputPath, storagePath)
 	if err != nil {
-		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to upload PDF to Firebase Storage: %v", err), fiber.StatusInternalServerError)
+		return logAndRespond(c, keyEntity, templateEntity, fmt.Sprintf("failed to upload PDF to Backblaze: %v", err), fiber.StatusInternalServerError)
 	}
 
 	// Delete the PDF file locally

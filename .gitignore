@@ -5,3 +5,5 @@
 
 # Exclude the tmp folder
 tmp/
+
+uploads/
