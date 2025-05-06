@@ -17,12 +17,6 @@ dist/
 .env.example
 docker-compose.yml
 
-# Dossier de dépendances Go
-vendor/
-
-# Fichiers d'upload utilisateur
-uploads/
-
 # Logs
 *.log
 

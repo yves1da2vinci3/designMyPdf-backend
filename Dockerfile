@@ -2,15 +2,26 @@ FROM golang:1.22-bullseye AS builder
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
+# Installer swag pour la génération de la documentation Swagger
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# Copier d'abord seulement go.mod et go.sum
 COPY go.mod go.sum ./
+
+# Télécharger les dépendances et les mettre en cache
 RUN go mod download
 
 # Copier le reste du code source
 COPY . .
 
-# Compiler l'application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o app .
+# Générer la documentation Swagger
+RUN swag init
+
+# Générer les fichiers vendor pour assurer que toutes les dépendances sont disponibles localement
+RUN go mod vendor
+
+# Compiler l'application avec vendor
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o app .
 
 # Image finale avec Chrome pour la génération de PDF
 FROM debian:bullseye-slim
@@ -57,8 +68,9 @@ WORKDIR /app
 # Copier le binaire compilé depuis l'étape précédente
 COPY --from=builder /app/app .
 
-# Copier les fichiers de configuration s'ils existent
+# Copier les fichiers de configuration et docs
 COPY --from=builder /app/config ./config
+COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/.env ./.env
 
 # Exposer le port utilisé par l'application
@@ -67,6 +79,7 @@ EXPOSE 5000
 # Définir les variables d'environnement nécessaires
 ENV PORT=5000
 ENV CHROME_PATH=/usr/bin/google-chrome
+ENV GO111MODULE=on
 
 # Commande pour démarrer l'application
 CMD ["./app"] 
