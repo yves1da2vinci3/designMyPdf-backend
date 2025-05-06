@@ -1,0 +1,38 @@
+# Fichiers Git
+.git
+.gitignore
+
+# Fichiers temporaires
+tmp/
+*.tmp
+*.swp
+
+# Fichiers de build
+app
+bin/
+dist/
+
+# Fichiers de développement
+.air.toml
+.env.example
+docker-compose.yml
+
+# Dossier de dépendances Go
+vendor/
+
+# Fichiers d'upload utilisateur
+uploads/
+
+# Logs
+*.log
+
+# Fichiers macOS
+.DS_Store
+
+# Documentation
+README.md
+docs/
+
+# Fichiers de debug
+debug
+*.pprof 
