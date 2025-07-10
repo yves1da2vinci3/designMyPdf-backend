@@ -1,1 +1,9 @@
 .env
+*.db
+# Exclude all .json files
+*.json
+
+# Exclude the tmp folder
+tmp/
+
+uploads/

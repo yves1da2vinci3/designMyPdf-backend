@@ -1,35 +1,50 @@
 package presenter
 
 import (
-	"designmypdf/pkg/auth"
+	"designmypdf/pkg/entities"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-// User is the presenter object which will be passed in the response by Handler
-type User struct {
-	ID       string `json:"id"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
+// UserSuccessResponse is the singular SuccessResponse that will be passed in the response by
+
+type LoginResponse struct {
+	Status       bool           `json:"status"`
+	Data         *entities.User `json:"data"`
+	Error        error          `json:"error"`
+	AccessToken  string         `json:"access_token"`
+	RefreshToken string         `json:"refresh_token"`
 }
 
-// UserSuccessResponse is the singular SuccessResponse that will be passed in the response by
 // Handler
-func UserSuccessResponse(data interface{}) *fiber.Map {
-	userData := data.(*auth.User)
-	user := User{
-		Username: userData.UserName,
-		Email:    userData.Email,
+func UserSuccessResponse(user *entities.User) *fiber.Map {
+
+	userData := entities.User{
+		UserName: user.UserName,
+		Email:    user.Email,
 	}
 	return &fiber.Map{
 		"status": true,
-		"data":   user,
+		"data":   userData,
 		"error":  nil,
+	}
+}
+func LoginSuccessResponse(loginResponse *LoginResponse) *fiber.Map {
+	userData := entities.User{
+		UserName: loginResponse.Data.UserName,
+		Email:    loginResponse.Data.Email,
+	}
+	return &fiber.Map{
+		"status":       true,
+		"data":         userData,
+		"accessToken":  loginResponse.AccessToken,
+		"refreshToken": loginResponse.RefreshToken,
+		"error":        nil,
 	}
 }
 
 // UsersSuccessResponse is the list SuccessResponse that will be passed in the response by Handler
-func UsersSuccessResponse(data *[]User) *fiber.Map {
+func UsersSuccessResponse(data *[]entities.User) *fiber.Map {
 	return &fiber.Map{
 		"status": true,
 		"data":   data,

@@ -1,17 +1,38 @@
-version: '3.8'
+version: '3'
 
 services:
-  postgresql:
-    image: postgres:14
-    container_name: designPDF-postgres
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "5432:5432"
+      - '5000:5000'
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
-      POSTGRES_DB: ${DB_NAME}
+      - PORT=5000
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/designmypdf
+      - CHROME_PATH=/usr/bin/google-chrome
+      # Ajoutez ici vos variables B2 et autres variables d'environnement
+      - B2_ACCOUNT_ID=${B2_ACCOUNT_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
+    depends_on:
+      - postgres
     volumes:
-      - designPDF_data:/var/lib/postgresql/data
+      - ./uploads:/app/uploads
+      - ./tmp:/app/tmp
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: designPDF-postgres
+    restart: always
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=designmypdf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  designPDF_data:
+  postgres_data:

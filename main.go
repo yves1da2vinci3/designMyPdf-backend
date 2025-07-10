@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	_ "designmypdf/docs"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 	"github.com/joho/godotenv"
 )
@@ -21,6 +24,21 @@ func SetupFiberServer() {
 	}
 
 	app := fiber.New()
+	// ** setup CORS
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "https://designmypdf.vercel.app,http://localhost:3000,http://localhost:3001",
+		AllowHeaders:     "Authorization, Content-Type",
+		AllowMethods:     "GET, POST, PUT, DELETE",
+		AllowCredentials: true,
+	}))	
+	// ** setup rate limiting
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+	}))
 
 	// Setup Swagger
 	app.Get("/swagger/*", swagger.HandlerDefault) // default
@@ -58,8 +76,7 @@ func main() {
 
 	if database.DB != nil {
 		fmt.Println("Connected to SQL database:", database.DB)
-	} else if database.MongoDBClient != nil {
-		fmt.Println("Connected to MongoDB:", database.MongoDBClient)
+
 	} else {
 		fmt.Println("No database connection established")
 	}

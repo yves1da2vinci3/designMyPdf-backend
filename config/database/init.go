@@ -7,15 +7,11 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/mongo"
 	"gorm.io/gorm"
 )
 
 // DB is a global variable to hold the SQL database connection
 var DB *gorm.DB
-
-// MongoDBClient is a global variable to hold the MongoDB connection
-var MongoDBClient *mongo.Client
 
 // DatabaseConfig holds the configuration details for the database
 type DatabaseConfig struct {
@@ -32,12 +28,6 @@ type DatabaseConfig struct {
 func Initialize() error {
 	config := GetConfigFromEnv()
 	switch strings.ToLower(config.DBType) {
-	case "mongodb":
-		client, err := InitializeMongo(config.MongoURI)
-		if err != nil {
-			return err
-		}
-		MongoDBClient = client
 	case "mysql":
 		db, err := InitializeSQL("mysql", config.Host, config.Port, config.User, config.Password, config.DBName)
 		if err != nil {
