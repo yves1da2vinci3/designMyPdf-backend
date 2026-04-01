@@ -1,60 +1,58 @@
-FROM golang:1.22-bullseye AS builder
+# --- ÉTAPE 1 : BUILDER (Compilation de l'application Go) ---
+    FROM golang:1.22-bullseye AS builder
 
-WORKDIR /app
-
-# Installer swag pour la génération de la documentation Swagger
-RUN go install github.com/swaggo/swag/cmd/swag@latest
-
-# Copier d'abord seulement go.mod et go.sum
-COPY go.mod go.sum ./
-
-# Télécharger les dépendances et les mettre en cache
-RUN go mod download
-
-# Copier le reste du code source
-COPY . .
-
-# Générer la documentation Swagger
-RUN swag init
-
-# Générer les fichiers vendor pour assurer que toutes les dépendances sont disponibles localement
-RUN go mod vendor
-
-# Compiler l'application avec vendor
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o app .
-
-# Image finale : Chromium (léger, dépôts Debian) pour la génération de PDF
-FROM debian:bullseye-slim
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Chromium + dépendances minimales en un seul RUN (moins de couches, moins de RAM au build)
-RUN apt-get update && apt-get install -y \
-    chromium \
-    fonts-liberation \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libgbm1 \
-    libasound2 \
-    ca-certificates \
-    --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-RUN mkdir -p /app/uploads/template /app/tmp /app/config /app/docs
-
-COPY --from=builder /app/app .
-COPY --from=builder /app/config ./config
-COPY --from=builder /app/docs ./docs
-COPY --from=builder /app/.env ./.env
-
-ENV CHROME_PATH=/usr/bin/chromium
-ENV PORT=5000
-
-EXPOSE 5000
-
-CMD ["./app"]
+    WORKDIR /app
+    
+    # 1. Installer l'outil Swagger (swag)
+    RUN go install github.com/swaggo/swag/cmd/swag@latest
+    
+    # 2. Gérer les dépendances (utilisons le cache Docker au maximum)
+    COPY go.mod go.sum ./
+    RUN go mod download
+    
+    # 3. Copier le reste du code source
+    COPY . .
+    
+    # 4. Générer la documentation Swagger
+    RUN swag init
+    
+    # 5. Compiler le binaire de manière statique
+    # -ldflags="-s -w" permet de réduire la taille du binaire final
+    RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o app .
+    
+    # --- ÉTAPE 2 : FINAL (Image légère pour l'exécution) ---
+    FROM debian:bullseye-slim
+    
+    # Éviter les prompts interactifs d'apt
+    ENV DEBIAN_FRONTEND=noninteractive
+    
+    # Installation de Chromium et des certificats CA (nécessaires pour HTTPS/PDF)
+    # On ne liste que le strict nécessaire, Debian gère les dépendances de Chromium
+    RUN apt-get update && apt-get install -y --no-install-recommends \
+        chromium \
+        fonts-liberation \
+        ca-certificates \
+        && apt-get clean \
+        && rm -rf /var/lib/apt/lists/*
+    
+    WORKDIR /app
+    
+    # Création des dossiers nécessaires au runtime
+    RUN mkdir -p /app/uploads/template /app/tmp /app/config /app/docs
+    
+    # Copier uniquement ce qui est nécessaire depuis le builder
+    COPY --from=builder /app/app .
+    COPY --from=builder /app/config ./config
+    COPY --from=builder /app/docs ./docs
+    COPY --from=builder /app/.env ./.env
+    
+    # Variables d'environnement pour l'application
+    ENV CHROME_PATH=/usr/bin/chromium
+    ENV PORT=5000
+    ENV GO111MODULE=on
+    
+    # Exposer le port
+    EXPOSE 5000
+    
+    # Lancement de l'application
+    CMD ["./app"]
