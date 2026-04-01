@@ -53,7 +53,20 @@ func GeneratePDF(htmlContent string, format string, outputPath string) error {
 		return err
 	}
 
-	ctx, cancel := chromedp.NewContext(context.Background())
+	// Options adaptées au conteneur Docker (Chromium headless, pas de sandbox root)
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.NoSandbox,
+		chromedp.Headless,
+		chromedp.DisableGPU,
+	)
+	if p := os.Getenv("CHROME_PATH"); p != "" {
+		opts = append(opts, chromedp.ExecPath(p))
+	}
+
+	allocCtx, cancelAlloc := chromedp.NewExecAllocator(context.Background(), opts...)
+	defer cancelAlloc()
+
+	ctx, cancel := chromedp.NewContext(allocCtx)
 	defer cancel()
 
 	var buf []byte

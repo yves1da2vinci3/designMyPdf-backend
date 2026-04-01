@@ -45,7 +45,7 @@ L'API sera disponible à l'adresse : http://localhost:5000
 
 ### Génération de PDF
 
-L'application utilise Chrome pour générer des PDFs à partir de templates HTML. Cette fonctionnalité est déjà incluse dans l'image Docker.
+L'application utilise Chromium (headless) pour générer des PDFs à partir de templates HTML. Cette fonctionnalité est déjà incluse dans l'image Docker.
 
 ### Structure des dossiers
 

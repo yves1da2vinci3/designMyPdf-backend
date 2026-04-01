@@ -23,63 +23,38 @@ RUN go mod vendor
 # Compiler l'application avec vendor
 RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o app .
 
-# Image finale avec Chrome pour la génération de PDF
+# Image finale : Chromium (léger, dépôts Debian) pour la génération de PDF
 FROM debian:bullseye-slim
 
-# Installer Chrome et les dépendances nécessaires
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Chromium + dépendances minimales en un seul RUN (moins de couches, moins de RAM au build)
 RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    ca-certificates \
+    chromium \
     fonts-liberation \
-    libasound2 \
-    libatk-bridge2.0-0 \
+    libnss3 \
     libatk1.0-0 \
-    libatspi2.0-0 \
+    libatk-bridge2.0-0 \
     libcups2 \
-    libdbus-1-3 \
     libdrm2 \
     libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libwayland-client0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxkbcommon0 \
-    libxrandr2 \
-    xdg-utils \
+    libasound2 \
+    ca-certificates \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Installer Google Chrome
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
-
-# Créer les répertoires pour les uploads et les fichiers temporaires
-RUN mkdir -p /app/uploads/template /app/tmp
-
 WORKDIR /app
 
-# Copier le binaire compilé depuis l'étape précédente
-COPY --from=builder /app/app .
+RUN mkdir -p /app/uploads/template /app/tmp /app/config /app/docs
 
-# Copier les fichiers de configuration et docs
+COPY --from=builder /app/app .
 COPY --from=builder /app/config ./config
 COPY --from=builder /app/docs ./docs
 COPY --from=builder /app/.env ./.env
 
-# Exposer le port utilisé par l'application
+ENV CHROME_PATH=/usr/bin/chromium
+ENV PORT=5000
+
 EXPOSE 5000
 
-# Définir les variables d'environnement nécessaires
-ENV PORT=5000
-ENV CHROME_PATH=/usr/bin/google-chrome
-ENV GO111MODULE=on
-
-# Commande pour démarrer l'application
-CMD ["./app"] 
+CMD ["./app"]
