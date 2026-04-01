@@ -2,11 +2,9 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
@@ -62,11 +60,6 @@ func GetConfigFromEnv() DatabaseConfig {
 
 // getEnv retrieves the value of the environment variable named by the key or returns the fallback value if not present
 func getEnv(key, fallback string) string {
-	// Load environment variables
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}

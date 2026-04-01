@@ -20,7 +20,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/joho/godotenv"
 	"gorm.io/datatypes"
 )
 
@@ -55,12 +54,7 @@ func getStorageInstance() (*storage.BackblazeStorage, error) {
 	if storageInstance != nil {
 		return storageInstance, nil
 	}
-	
-	// Charger les variables d'environnement si nécessaire
-	if err := godotenv.Load(); err != nil {
-		// Ignorer l'erreur si le fichier n'existe pas
-	}
-	
+
 	b2Storage, err := storage.NewBackblazeStorage(
 		os.Getenv("B2_ACCOUNT_ID"),
 		os.Getenv("B2_APPLICATION_KEY"),

@@ -3,11 +3,9 @@ package database
 import (
 	"designmypdf/pkg/entities"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -23,10 +21,6 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		dsn = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", user, password, host, port, dbName)
 		dialector = mysql.Open(dsn)
 	case "postgresql":
-		err := godotenv.Load()
-		if err != nil {
-			log.Fatalf("Error loading .env file: %s", err)
-		}
 		sslmode := "disable"
 		stage := os.Getenv("GO_ENV")
 		if stage == "production" {

@@ -6,16 +6,9 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 )
 
-// Load environment variables when the package is initialized
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Error loading .env file")
-	}
-
 	accessTokenKey = []byte(os.Getenv("ACCESS_TOKEN_KEY"))
 	refreshTokenKey = []byte(os.Getenv("REFRESH_TOKEN_KEY"))
 	resetTokenKey = []byte(os.Getenv("RESET_TOKEN_KEY"))

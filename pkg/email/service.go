@@ -2,11 +2,8 @@ package email
 
 import (
 	"fmt"
-	"log"
 	"net/smtp"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Email struct {
@@ -15,13 +12,6 @@ type Email struct {
 	Subject     string
 	Body        string
 	ContentType string
-}
-
-func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
 }
 
 func SendSignupEmail(to, userName string) error {
@@ -36,10 +26,6 @@ func SendSignupEmail(to, userName string) error {
 }
 
 func SendForgotPasswordEmail(to, token string) error {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
 	link := "http://localhost:3000/reset-password"
 	stage := os.Getenv("GO_ENV")
 	if stage == "production" {

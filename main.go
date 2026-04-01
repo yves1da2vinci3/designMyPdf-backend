@@ -1,6 +1,8 @@
 package main
 
 import (
+	_ "designmypdf/config/env"
+
 	"designmypdf/api/routes"
 	"designmypdf/config/database"
 	"fmt"
@@ -14,15 +16,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
-	"github.com/joho/godotenv"
 )
 
 func SetupFiberServer() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
-
 	app := fiber.New()
 	// ** setup CORS
 	app.Use(cors.New(cors.Config{

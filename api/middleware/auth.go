@@ -6,15 +6,10 @@ import (
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/joho/godotenv"
 )
 
 // Protected protect routes
 func Protected() func(*fiber.Ctx) error {
-	err := godotenv.Load()
-	if err != nil {
-		panic("Error loading .env file")
-	}
 	return jwtware.New(jwtware.Config{
 		SigningKey:   jwtware.SigningKey{Key: []byte(os.Getenv("ACCESS_TOKEN_KEY"))},
 		ErrorHandler: jwtError,

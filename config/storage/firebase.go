@@ -9,16 +9,11 @@ import (
 
 	"cloud.google.com/go/storage"
 	firebase "firebase.google.com/go/v4"
-	"github.com/joho/godotenv"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 func InitializeFirebaseStorage() (*storage.BucketHandle, error) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file: %s", err)
-	}
 	config := &firebase.Config{
 		StorageBucket: fmt.Sprintf("%s.appspot.com", os.Getenv("BUCKET_NAME")),
 	}
