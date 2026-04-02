@@ -22,7 +22,7 @@ func SetupFiberServer() {
 	app := fiber.New()
 	// ** setup CORS
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://designmypdf.vercel.app,http://localhost:3000,http://localhost:3001",
+		AllowOrigins:     "https://designmypdf.vercel.app,http://localhost:3000,http://localhost:3001,https://designmypdf.yvesdavinci.tech",
 		AllowHeaders:     "Authorization, Content-Type",
 		AllowMethods:     "GET, POST, PUT, DELETE",
 		AllowCredentials: true,
