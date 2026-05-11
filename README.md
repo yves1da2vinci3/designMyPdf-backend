@@ -20,10 +20,17 @@ PORT=5000
 # Connexion à la base de données (déjà configurée dans docker-compose.yml)
 DATABASE_URL=postgres://postgres:postgres@postgres:5432/designmypdf
 
-# Configuration Backblaze B2 (obligatoire pour le stockage des PDFs)
-B2_ACCOUNT_ID=your_account_id
-B2_APPLICATION_KEY=your_application_key
-B2_BUCKET_NAME=your_bucket_name
+# Backblaze B2 (recommandé — aligné sur frontend/services/backblazeService.ts)
+# Premier champ = Application Key ID (souvent préfixe 005…), pas seulement l’ID compte sauf clé maître.
+BACKBLAZE_KEY_ID=
+BACKBLAZE_APP_KEY=
+BACKBLAZE_BUCKET_NAME=
+
+# Ancien nommage (toujours supporté si BACKBLAZE_* vides)
+# B2_ACCOUNT_ID doit contenir la même valeur que BACKBLAZE_KEY_ID (Application Key ID).
+# B2_ACCOUNT_ID=
+# B2_APPLICATION_KEY=
+# B2_BUCKET_NAME=
 
 # Variables d'authentification (si nécessaire)
 JWT_SECRET=your_jwt_secret

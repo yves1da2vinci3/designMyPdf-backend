@@ -55,11 +55,11 @@ func getStorageInstance() (*storage.BackblazeStorage, error) {
 		return storageInstance, nil
 	}
 
-	b2Storage, err := storage.NewBackblazeStorage(
-		os.Getenv("B2_ACCOUNT_ID"),
-		os.Getenv("B2_APPLICATION_KEY"),
-		os.Getenv("B2_BUCKET_NAME"),
-	)
+	keyID, appKey, bucketName, ok := storage.B2ConfigFromEnv()
+	if !ok {
+		return nil, fmt.Errorf("backblaze B2 env missing: set BACKBLAZE_KEY_ID, BACKBLAZE_APP_KEY, BACKBLAZE_BUCKET_NAME (or legacy B2_*)")
+	}
+	b2Storage, err := storage.NewBackblazeStorage(keyID, appKey, bucketName)
 	if err != nil {
 		return nil, err
 	}
