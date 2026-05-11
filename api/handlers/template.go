@@ -7,8 +7,10 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"gorm.io/datatypes"
 )
 
@@ -138,13 +140,22 @@ func GetTemplates(templateService template.Service) fiber.Handler {
 }
 func GetTemplate(templateService template.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		templateID := c.Params("templateID")
-
+		templateID := strings.TrimSpace(c.Params("templateID"))
 		if templateID == "" {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid template ID")))
 		}
-		result, err := templateService.GetByUUID(templateID)
+
+		var result *entities.Template
+		var err error
+		if _, parseErr := uuid.Parse(templateID); parseErr == nil {
+			result, err = templateService.GetByUUID(templateID)
+		} else if idNum, parseErr := strconv.ParseUint(templateID, 10, 32); parseErr == nil {
+			result, err = templateService.Get(uint(idNum))
+		} else {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid template ID")))
+		}
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.TemplateErrorResponse(err))
