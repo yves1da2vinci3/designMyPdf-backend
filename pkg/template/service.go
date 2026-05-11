@@ -16,6 +16,7 @@ type Service interface {
 	Get(ID uint) (*entities.Template, error)
 	GetByUUID(UUID string) (*entities.Template, error)
 	Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString) (*entities.Template, error)
+	UpdateFull(ID uint, fields map[string]interface{}) (*entities.Template, error)
 	ChangeTemplateNamespace(ID uint, NamespaceID uint) error
 }
 
@@ -101,6 +102,10 @@ func (s *service) ChangeTemplateNamespace(ID uint, NamespaceID uint) error {
 		return nil
 	}
 	return nil
+}
+
+func (s *service) UpdateFull(ID uint, fields map[string]interface{}) (*entities.Template, error) {
+	return s.repository.UpdateFields(ID, fields)
 }
 
 // Update the name of the template with the given ID.

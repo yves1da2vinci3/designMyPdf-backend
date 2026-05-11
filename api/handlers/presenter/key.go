@@ -8,13 +8,14 @@ import (
 )
 
 type KeyResponse struct {
-	ID           uint      `json:"id"`
-	UserID       uint      `json:"user_id"`
-	Value        string    `json:"value"`
-	Name         string    `json:"name"`
-	KeyCount     int       `json:"key_count"`
-	KeyCountUsed int       `json:"key_count_used"`
-	CreateAt     time.Time `json:"created_at"`
+	ID           uint       `json:"id"`
+	UserID       uint       `json:"user_id"`
+	Value        string     `json:"value"`
+	Name         string     `json:"name"`
+	KeyCount     int        `json:"key_count"`
+	KeyCountUsed int        `json:"key_count_used"`
+	CreateAt     time.Time  `json:"created_at"`
+	LastUsedAt   *time.Time `json:"last_used_at"`
 }
 
 func KeySuccessResponse(key *entities.Key) *fiber.Map {
@@ -26,6 +27,7 @@ func KeySuccessResponse(key *entities.Key) *fiber.Map {
 		KeyCount:     key.KeyCount,
 		KeyCountUsed: key.KeyCountUsed,
 		CreateAt:     key.CreatedAt,
+		LastUsedAt:   key.LastUsedAt,
 	}
 	return &fiber.Map{
 		"status": true,
@@ -45,6 +47,7 @@ func KeysSuccessResponse(keys []entities.Key) *fiber.Map {
 			KeyCount:     key.KeyCount,
 			KeyCountUsed: key.KeyCountUsed,
 			CreateAt:     key.CreatedAt,
+			LastUsedAt:   key.LastUsedAt,
 		}
 	}
 	return &fiber.Map{

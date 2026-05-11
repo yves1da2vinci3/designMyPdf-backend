@@ -18,7 +18,12 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 func (r *Repository) CreateLog(log *entities.Log) error {
-	return r.db.Create(log).Error
+	if err := r.db.Create(log).Error; err != nil {
+		return err
+	}
+	now := time.Now()
+	r.db.Model(&entities.Key{}).Where("id = ?", log.KeyID).Update("last_used_at", &now)
+	return nil
 }
 
 func (r *Repository) GetLogsByTimeRange(start, end time.Time) (*[]entities.Log, error) {
@@ -59,6 +64,9 @@ func (r *Repository) GetLogStats(userID uint, period string) (*[]LogStats, error
 	var groupBy string
 
 	switch period {
+	case "day":
+		startDate = time.Now().AddDate(0, 0, -1)
+		groupBy = "TO_CHAR(called_at, 'HH24')"
 	case "week":
 		startDate = time.Now().AddDate(0, 0, -7)
 		groupBy = "TO_CHAR(called_at, 'DY')"

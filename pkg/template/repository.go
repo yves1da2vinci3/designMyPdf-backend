@@ -57,3 +57,14 @@ func (r *Repository) GetAllUserTemplates(userID uint) (*[]entities.Template, err
 	}
 	return &templates, nil
 }
+
+func (r *Repository) UpdateFields(id uint, fields map[string]interface{}) (*entities.Template, error) {
+	var template entities.Template
+	if err := r.db.First(&template, id).Error; err != nil {
+		return nil, err
+	}
+	if err := r.db.Model(&template).Updates(fields).Error; err != nil {
+		return nil, err
+	}
+	return &template, nil
+}
