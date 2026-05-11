@@ -12,8 +12,10 @@ func MarketplaceRouter(api fiber.Router, svc marketplace.Service) {
 	mp := api.Group("/marketplace")
 	mp.Get("/", handlers.ListMarketplace(svc))
 	mp.Get("/my-listings", middleware.Protected(), handlers.GetMyListings(svc))
-	mp.Get("/:id", handlers.GetMarketplaceListing(svc))
+	mp.Put("/listings/:id", middleware.Protected(), handlers.UpdateMarketplaceListing(svc))
+	mp.Post("/listings/:id/unpublish", middleware.Protected(), handlers.UnpublishMarketplaceListing(svc))
 	mp.Post("/publish", middleware.Protected(), handlers.PublishToMarketplace(svc))
+	mp.Get("/:id", handlers.GetMarketplaceListing(svc))
 	mp.Post("/:id/copy", middleware.Protected(), handlers.CopyMarketplaceTemplate(svc))
 	mp.Post("/:id/purchase", middleware.Protected(), handlers.PurchaseMarketplaceTemplate(svc))
 }

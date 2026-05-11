@@ -6,17 +6,44 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
+func statusForMarketplaceMutationErr(err error) int {
+	msg := err.Error()
+	switch msg {
+	case "unauthorized: template does not belong to user", "template is not a marketplace listing":
+		return http.StatusForbidden
+	}
+	if strings.Contains(msg, "required") ||
+		strings.Contains(msg, "at least") ||
+		strings.Contains(msg, "invalid category") ||
+		strings.Contains(msg, "cannot be negative") {
+		return http.StatusBadRequest
+	}
+	return http.StatusInternalServerError
+}
+
 type PublishRequest struct {
 	TemplateID    uint                 `json:"templateId"`
+	Name          string               `json:"name"`
 	Price         int                  `json:"price"`
 	Description   string               `json:"description"`
 	Category      string               `json:"category"`
 	Features      entities.MultiString `json:"features"`
 	CoverImageURL string               `json:"coverImageURL"`
+}
+
+type UpdateListingRequest struct {
+	Name          string               `json:"name"`
+	Price         int                  `json:"price"`
+	Description   string               `json:"description"`
+	Category      string               `json:"category"`
+	Features      entities.MultiString `json:"features"`
+	CoverImageURL string               `json:"coverImageURL"`
+	IsPublished   *bool                `json:"isPublished"`
 }
 
 type CopyRequest struct {
@@ -72,13 +99,9 @@ func PublishToMarketplace(svc marketplace.Service) fiber.Handler {
 			return c.JSON(fiber.Map{"status": false, "error": "templateId required"})
 		}
 
-		template, err := svc.Publish(req.TemplateID, userID, req.Description, req.Price, req.Category, req.Features, req.CoverImageURL)
+		template, err := svc.Publish(req.TemplateID, userID, req.Name, req.Description, req.Price, req.Category, req.Features, req.CoverImageURL)
 		if err != nil {
-			if err.Error() == "unauthorized: template does not belong to user" {
-				c.Status(http.StatusForbidden)
-			} else {
-				c.Status(http.StatusInternalServerError)
-			}
+			c.Status(statusForMarketplaceMutationErr(err))
 			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
 		}
 		return c.JSON(fiber.Map{"status": true, "template": template})
@@ -129,6 +152,64 @@ func PurchaseMarketplaceTemplate(svc marketplace.Service) fiber.Handler {
 			"message": "payment processed",
 			"success": true,
 		})
+	}
+}
+
+func UnpublishMarketplaceListing(svc marketplace.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userIDValue := c.Locals("userID")
+		userIDFloat, ok := userIDValue.(float64)
+		if !ok {
+			c.Status(http.StatusUnauthorized)
+			return c.JSON(fiber.Map{"status": false, "error": "invalid user"})
+		}
+		userID := uint(userIDFloat)
+
+		idStr := c.Params("id")
+		id, err := strconv.ParseUint(idStr, 10, 32)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(fiber.Map{"status": false, "error": "invalid id"})
+		}
+
+		template, err := svc.SetListingPublished(uint(id), userID, false)
+		if err != nil {
+			c.Status(statusForMarketplaceMutationErr(err))
+			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
+		}
+		return c.JSON(fiber.Map{"status": true, "template": template})
+	}
+}
+
+func UpdateMarketplaceListing(svc marketplace.Service) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		userIDValue := c.Locals("userID")
+		userIDFloat, ok := userIDValue.(float64)
+		if !ok {
+			c.Status(http.StatusUnauthorized)
+			return c.JSON(fiber.Map{"status": false, "error": "invalid user"})
+		}
+		userID := uint(userIDFloat)
+
+		idStr := c.Params("id")
+		id, err := strconv.ParseUint(idStr, 10, 32)
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(fiber.Map{"status": false, "error": "invalid id"})
+		}
+
+		var req UpdateListingRequest
+		if err := c.BodyParser(&req); err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
+		}
+
+		template, err := svc.UpdateListing(uint(id), userID, req.Name, req.Description, req.Price, req.Category, req.Features, req.CoverImageURL, req.IsPublished)
+		if err != nil {
+			c.Status(statusForMarketplaceMutationErr(err))
+			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
+		}
+		return c.JSON(fiber.Map{"status": true, "template": template})
 	}
 }
 
