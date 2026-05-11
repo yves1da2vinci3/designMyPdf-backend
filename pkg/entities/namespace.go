@@ -11,6 +11,7 @@ type Namespace struct {
 	Name      string     `json:"name"`
 	Templates []Template `json:"templates" gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 	UserID    uint       `json:"user_id"`
+	User      User       `json:"-" gorm:"foreignKey:UserID"`
 }
 
 func (ns *Namespace) BeforeDelete(tx *gorm.DB) error {

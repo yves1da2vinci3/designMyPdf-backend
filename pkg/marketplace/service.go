@@ -28,7 +28,7 @@ func ValidateListingMetadata(name, description, category, coverImageURL string, 
 }
 
 type Service interface {
-	GetAll(category string) ([]*entities.Template, error)
+	GetAll(category string, excludeAuthorID *uint) ([]*entities.Template, error)
 	GetByID(id uint) (*entities.Template, error)
 	GetUserListings(userID uint) ([]*entities.Template, error)
 	Publish(templateID, userID uint, name, description string, price int, category string, features entities.MultiString, coverImageURL string) (*entities.Template, error)
@@ -47,8 +47,8 @@ func NewService() Service {
 	}
 }
 
-func (s *service) GetAll(category string) ([]*entities.Template, error) {
-	return s.repo.GetAll(category)
+func (s *service) GetAll(category string, excludeAuthorID *uint) ([]*entities.Template, error) {
+	return s.repo.GetAll(category, excludeAuthorID)
 }
 
 func (s *service) GetByID(id uint) (*entities.Template, error) {

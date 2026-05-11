@@ -16,6 +16,12 @@ type LoginResponse struct {
 	RefreshToken string         `json:"refresh_token"`
 }
 
+type AuthUserData struct {
+	ID       uint   `json:"id"`
+	UserName string `json:"user_name"`
+	Email    string `json:"email"`
+}
+
 // Handler
 func UserSuccessResponse(user *entities.User) *fiber.Map {
 
@@ -30,7 +36,8 @@ func UserSuccessResponse(user *entities.User) *fiber.Map {
 	}
 }
 func LoginSuccessResponse(loginResponse *LoginResponse) *fiber.Map {
-	userData := entities.User{
+	userData := AuthUserData{
+		ID:       loginResponse.Data.ID,
 		UserName: loginResponse.Data.UserName,
 		Email:    loginResponse.Data.Email,
 	}

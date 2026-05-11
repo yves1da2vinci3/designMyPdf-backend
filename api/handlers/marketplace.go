@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"designmypdf/api/handlers/presenter"
+	"designmypdf/pkg/auth"
 	"designmypdf/pkg/entities"
 	"designmypdf/pkg/marketplace"
 	"errors"
@@ -51,10 +52,46 @@ type CopyRequest struct {
 	NamespaceID uint `json:"namespaceId"`
 }
 
+type MarketplaceAuthorResponse struct {
+	Name   string `json:"name"`
+	Avatar string `json:"avatar"`
+}
+
+type MarketplaceTemplateResponse struct {
+	ID            uint                      `json:"ID"`
+	UUID          string                    `json:"uuid"`
+	Name          string                    `json:"name"`
+	Content       string                    `json:"content"`
+	Framework     entities.FrameworkType    `json:"framework"`
+	Variables     interface{}               `json:"variables"`
+	Fonts         entities.MultiString      `json:"fonts"`
+	NamespaceID   uint                      `json:"NamespaceID"`
+	Description   string                    `json:"description"`
+	CoverImageURL string                    `json:"cover_image_url"`
+	Price         int                       `json:"price"`
+	IsMarketplace bool                      `json:"is_marketplace"`
+	IsPublished   bool                      `json:"is_published"`
+	Category      string                    `json:"category"`
+	Features      entities.MultiString      `json:"features"`
+	UsesCount     int                       `json:"uses_count"`
+	Author        MarketplaceAuthorResponse `json:"author"`
+}
+
 func ListMarketplace(svc marketplace.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		category := c.Query("category", "")
-		templates, err := svc.GetAll(category)
+		var excludeAuthorID *uint
+		authHeader := strings.TrimSpace(c.Get("Authorization"))
+		if strings.HasPrefix(strings.ToLower(authHeader), "bearer ") {
+			token := strings.TrimSpace(authHeader[7:])
+			if token != "" {
+				if claims, err := auth.DecodeAccessToken(token); err == nil {
+					userID := claims.Content
+					excludeAuthorID = &userID
+				}
+			}
+		}
+		templates, err := svc.GetAll(category, excludeAuthorID)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
@@ -80,7 +117,31 @@ func GetMarketplaceListing(svc marketplace.Service) fiber.Handler {
 			c.Status(http.StatusNotFound)
 			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
 		}
-		return c.JSON(fiber.Map{"status": true, "template": template})
+		return c.JSON(fiber.Map{
+			"status": true,
+			"template": MarketplaceTemplateResponse{
+				ID:            template.ID,
+				UUID:          template.UUID,
+				Name:          template.Name,
+				Content:       template.Content,
+				Framework:     template.Framework,
+				Variables:     template.Variables,
+				Fonts:         template.Fonts,
+				NamespaceID:   template.NamespaceID,
+				Description:   template.Description,
+				CoverImageURL: template.CoverImageURL,
+				Price:         template.Price,
+				IsMarketplace: template.IsMarketplace,
+				IsPublished:   template.IsPublished,
+				Category:      template.Category,
+				Features:      template.Features,
+				UsesCount:     template.UsesCount,
+				Author: MarketplaceAuthorResponse{
+					Name:   template.Namespace.User.UserName,
+					Avatar: "",
+				},
+			},
+		})
 	}
 }
 
