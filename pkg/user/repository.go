@@ -109,6 +109,11 @@ func (r *Repository) FindSessionByToken(refreshToken string) (*entities.Session,
 	return &session, nil
 }
 
+// UpdateSession persists refresh token (and other fields) for an existing session row.
+func (r *Repository) UpdateSession(session *entities.Session) error {
+	return r.db.Save(session).Error
+}
+
 // Delete removes a session record from the database by its ID
 func (r *Repository) DeleteSession(id uint) error {
 	return r.db.Delete(&Session{}, id).Error

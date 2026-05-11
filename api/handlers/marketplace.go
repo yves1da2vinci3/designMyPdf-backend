@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"designmypdf/api/handlers/presenter"
 	"designmypdf/pkg/entities"
 	"designmypdf/pkg/marketplace"
 	"errors"
@@ -58,7 +59,11 @@ func ListMarketplace(svc marketplace.Service) fiber.Handler {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(fiber.Map{"status": false, "error": err.Error()})
 		}
-		return c.JSON(fiber.Map{"status": true, "templates": templates})
+		items := make([]presenter.MarketplaceListItem, 0, len(templates))
+		for _, t := range templates {
+			items = append(items, presenter.ToMarketplaceListItem(t))
+		}
+		return c.JSON(fiber.Map{"status": true, "templates": items})
 	}
 }
 

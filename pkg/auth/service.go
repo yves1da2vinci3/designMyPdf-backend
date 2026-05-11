@@ -159,23 +159,20 @@ func (s *service) ForgotPassword(mail string) error {
 // SetSession implements Service.
 func (s *service) SetSession(userID uint, refreshToken string) error {
 	session, err := s.repository.FindSessionByUserID(userID)
-	if err != nil {
+	if err != nil || session == nil {
 		newSession := &entities.Session{
 			UserID:       userID,
 			RefreshToken: refreshToken,
 		}
-		err = s.repository.CreateSession(newSession)
-		if err != nil {
+		if err := s.repository.CreateSession(newSession); err != nil {
 			return errors.New("error creating session")
 		}
+		return nil
 	}
-	if session != nil {
-		err = s.repository.DeleteSession(session.ID)
-		if err != nil {
-			return errors.New("error deleting session")
-		}
+	session.RefreshToken = refreshToken
+	if err := s.repository.UpdateSession(session); err != nil {
+		return errors.New("error updating session")
 	}
-
 	return nil
 }
 

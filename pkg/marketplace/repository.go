@@ -20,7 +20,8 @@ func (r *Repository) GetAll(category string) ([]*entities.Template, error) {
 	if category != "" {
 		q = q.Where("category = ?", category)
 	}
-	if err := q.Find(&templates).Error; err != nil {
+	// Do not load large columns for catalog listing.
+	if err := q.Omit("content", "variables").Find(&templates).Error; err != nil {
 		return nil, err
 	}
 	return templates, nil
