@@ -4,12 +4,7 @@ import (
 	"designmypdf/config/database"
 	"designmypdf/pkg/entities"
 	"errors"
-	"fmt"
 	"strings"
-)
-
-const (
-	minDescriptionLen = 80
 )
 
 var allowedCategories = map[string]struct{}{
@@ -21,32 +16,13 @@ var allowedCategories = map[string]struct{}{
 }
 
 // ValidateListingMetadata returns an error if marketplace listing fields are insufficient.
+// Description et couverture sont optionnelles ; les features peuvent être vides.
 func ValidateListingMetadata(name, description, category, coverImageURL string, features entities.MultiString) error {
 	if strings.TrimSpace(name) == "" {
 		return errors.New("name is required")
 	}
-	if len(strings.TrimSpace(description)) < minDescriptionLen {
-		return fmt.Errorf("description must be at least %d characters", minDescriptionLen)
-	}
 	if _, ok := allowedCategories[strings.TrimSpace(category)]; !ok {
 		return errors.New("invalid category")
-	}
-	if strings.TrimSpace(coverImageURL) == "" {
-		return errors.New("coverImageURL is required")
-	}
-	if len(features) == 0 {
-		return errors.New("at least one feature is required")
-	}
-	if len(features) > 0 {
-		nonEmpty := 0
-		for _, f := range features {
-			if strings.TrimSpace(f) != "" {
-				nonEmpty++
-			}
-		}
-		if nonEmpty == 0 {
-			return errors.New("at least one feature is required")
-		}
 	}
 	return nil
 }
