@@ -11,6 +11,7 @@ services:
       - PORT=5000
       - DATABASE_URL=postgres://postgres:postgres@postgres:5432/designmypdf
       - CHROME_PATH=/usr/bin/chromium
+      - RABBITMQ_URL=${RABBITMQ_URL}
       # Backblaze B2 (même convention que le frontend Next.js)
       - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
       - BACKBLAZE_APP_KEY=${BACKBLAZE_APP_KEY}
@@ -24,6 +25,26 @@ services:
     volumes:
       - ./uploads:/app/uploads
       - ./tmp:/app/tmp
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["./worker"]
+    environment:
+      - CHROME_PATH=/usr/bin/chromium
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APP_KEY=${BACKBLAZE_APP_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - B2_ACCOUNT_ID=${B2_ACCOUNT_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
+    depends_on:
+      - postgres
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
 
   postgres:
     image: postgres:15-alpine
