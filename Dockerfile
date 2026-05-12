@@ -16,7 +16,8 @@
     
     # Compilation statique optimisée
     # On retire les symboles de debug (-s -w) pour alléger le binaire
-    RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o app .
+    RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o app . && \
+        CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o worker ./cmd/worker/main.go
     
     # --- ÉTAPE 2 : FINAL ---
     FROM debian:bullseye-slim
@@ -38,6 +39,7 @@
     
     # Copie des fichiers nécessaires depuis le builder
     COPY --from=builder /app/app .
+    COPY --from=builder /app/worker .
     COPY --from=builder /app/config ./config
     COPY --from=builder /app/docs ./docs
     

@@ -2,15 +2,18 @@ package routes
 
 import (
 	"designmypdf/api/handlers"
+	"designmypdf/pkg/amqp"
 	"designmypdf/pkg/auth"
 	"designmypdf/pkg/key"
 	"designmypdf/pkg/logs"
 	"designmypdf/pkg/marketplace"
 	"designmypdf/pkg/namespace"
+	"designmypdf/pkg/pdfjob"
 	"designmypdf/pkg/storage"
 	"designmypdf/pkg/template"
 	"designmypdf/pkg/user"
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
@@ -55,6 +58,28 @@ func SetupRoutes(app *fiber.App) {
 	}
 	UploadRouter(api, b2)
 
-	// Handle PDF generation
+	// Synchronous PDF generation (unchanged)
 	api.Post("/generate-pdf/:templateId", handlers.GeneratePdf)
+
+	// Async PDF generation via RabbitMQ
+	var jobSvc *pdfjob.Service
+	rabbitmqURL := os.Getenv("RABBITMQ_URL")
+	if rabbitmqURL != "" {
+		amqpClient, err := amqp.NewClient(rabbitmqURL)
+		if err != nil {
+			log.Printf("Warning: RabbitMQ connect failed: %v — async routes disabled", err)
+		} else {
+			jobSvc = pdfjob.NewService(amqpClient)
+		}
+	} else {
+		log.Println("Warning: RABBITMQ_URL not set — async PDF routes disabled")
+	}
+
+	if jobSvc != nil {
+		api.Post("/generate-pdf/:templateId/async", handlers.GeneratePdfAsync(jobSvc))
+		api.Get("/pdf-jobs/:jobId", handlers.GetJobStatus(jobSvc))
+	}
+
+	// Webhook subscription management
+	WebhookRouter(api)
 }

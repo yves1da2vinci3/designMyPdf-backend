@@ -9,8 +9,10 @@ services:
       - '5000:5000'
     environment:
       - PORT=5000
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/designmypdf
+      # Postgres hors compose : définir DATABASE_URL dans .env ou l'environnement hôte
+      - DATABASE_URL=${DATABASE_URL}
       - CHROME_PATH=/usr/bin/chromium
+      - RABBITMQ_URL=${RABBITMQ_URL}
       # Backblaze B2 (même convention que le frontend Next.js)
       - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
       - BACKBLAZE_APP_KEY=${BACKBLAZE_APP_KEY}
@@ -19,24 +21,25 @@ services:
       - B2_ACCOUNT_ID=${B2_ACCOUNT_ID}
       - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
       - B2_BUCKET_NAME=${B2_BUCKET_NAME}
-    depends_on:
-      - postgres
     volumes:
       - ./uploads:/app/uploads
       - ./tmp:/app/tmp
 
-  postgres:
-    image: postgres:15-alpine
-    container_name: designPDF-postgres
-    restart: always
-    ports:
-      - '5432:5432'
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ['./worker']
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=designmypdf
+      - DATABASE_URL=${DATABASE_URL}
+      - CHROME_PATH=/usr/bin/chromium
+      - RABBITMQ_URL=${RABBITMQ_URL}
+      - BACKBLAZE_KEY_ID=${BACKBLAZE_KEY_ID}
+      - BACKBLAZE_APP_KEY=${BACKBLAZE_APP_KEY}
+      - BACKBLAZE_BUCKET_NAME=${BACKBLAZE_BUCKET_NAME}
+      - B2_ACCOUNT_ID=${B2_ACCOUNT_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - ./uploads:/app/uploads
+    restart: unless-stopped

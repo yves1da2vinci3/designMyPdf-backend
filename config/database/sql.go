@@ -37,7 +37,19 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		return nil, err
 	}
 	// Make migration
-	db.AutoMigrate(&entities.User{}, &entities.Namespace{}, &entities.Template{}, &entities.Key{}, &entities.Log{}, &entities.Session{})
+	db.AutoMigrate(
+		&entities.User{},
+		&entities.Namespace{},
+		&entities.Template{},
+		&entities.Key{},
+		&entities.Log{},
+		&entities.Session{},
+		&entities.PdfGenerationJob{},
+		&entities.WebhookSubscription{},
+		&entities.WebhookSubscriptionKey{},
+		&entities.WebhookEvent{},
+		&entities.WebhookSendAttempt{},
+	)
 
 	return db, nil
 }
