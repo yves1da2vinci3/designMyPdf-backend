@@ -80,6 +80,9 @@ func SetupRoutes(app *fiber.App) {
 		api.Get("/pdf-jobs/:jobId", handlers.GetJobStatus(jobSvc))
 	}
 
+	// AI quota
+	AiQuotaRouter(api)
+
 	// Webhook subscription management
 	WebhookRouter(api)
 }

@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"net/url"
 	"os"
 	"runtime"
@@ -36,10 +37,16 @@ var (
 	storageMu       sync.Mutex
 )
 
-func generateHash(templateContent string, data map[string]interface{}, format string) string {
+func generateHash(templateContent string, data map[string]interface{}, format string, bgColor string) string {
 	dataBytes, _ := json.Marshal(data)
-	hash := md5.Sum([]byte(templateContent + string(dataBytes) + format))
+	hash := md5.Sum([]byte(templateContent + string(dataBytes) + format + bgColor))
 	return hex.EncodeToString(hash[:])
+}
+
+var hexColorRe = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
+
+func isValidHex(color string) bool {
+	return hexColorRe.MatchString(color)
 }
 
 func getStorageInstance() (*storage.BackblazeStorage, error) {
@@ -70,7 +77,7 @@ func GeneratePdfForKey(
 	data map[string]interface{},
 	format string,
 ) (string, error) {
-	contentHash := generateHash(templateEntity.Content, data, format)
+	contentHash := generateHash(templateEntity.Content, data, format, templateEntity.PdfBackgroundColor)
 
 	pdfCacheInstance.mu.RLock()
 	cachedURL, found := pdfCacheInstance.cache[contentHash]
@@ -104,6 +111,11 @@ func GeneratePdfForKey(
 	fontImports := utils.ImportFontCreation(templateEntity.Fonts)
 	fontCSS := utils.FontCssCreation(templateEntity.Fonts)
 
+	var bgStyle string
+	if isValidHex(templateEntity.PdfBackgroundColor) {
+		bgStyle = fmt.Sprintf("body{background-color:%s!important}", templateEntity.PdfBackgroundColor)
+	}
+
 	fullHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
@@ -112,12 +124,12 @@ func GeneratePdfForKey(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     %s
     %s
-    <style>%s</style>
+    <style>%s %s</style>
 </head>
 <body class="overflow-x-hidden overflow-y-auto">
     <div class="content">%s</div>
 </body>
-</html>`, frameworkTag, fontImports, fontCSS, renderedHTML)
+</html>`, frameworkTag, fontImports, fontCSS, bgStyle, renderedHTML)
 
 	if err := os.MkdirAll("./uploads/template", 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %w", err)
