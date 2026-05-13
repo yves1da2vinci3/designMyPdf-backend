@@ -12,6 +12,7 @@ func AuthRouter(api fiber.Router, authService auth.Service) {
 	// auth
 	authRouter := api.Group("/auth")
 	authRouter.Post("/login", handlers.Login(authService))
+	authRouter.Post("/firebase", handlers.FirebaseLogin(authService))
 	authRouter.Post("/register", handlers.Register(authService))
 	authRouter.Put("/update", middleware.Protected(), handlers.Update(authService))
 	authRouter.Post("/forgot-password", handlers.ForgotPassword(authService))
