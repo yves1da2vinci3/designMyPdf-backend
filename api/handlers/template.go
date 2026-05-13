@@ -15,10 +15,11 @@ import (
 )
 
 type TemplateRequest struct {
-	Name      string               `json:"name"`
-	Content   string               `json:"content"`
-	Variables datatypes.JSON       `json:"variables" gorm:"type:json"`
-	Fonts     entities.MultiString `json:"fonts" gorm:"type:text"`
+	Name               string               `json:"name"`
+	Content            string               `json:"content"`
+	Variables          datatypes.JSON       `json:"variables" gorm:"type:json"`
+	Fonts              entities.MultiString `json:"fonts" gorm:"type:text"`
+	PdfBackgroundColor string               `json:"pdf_background_color"`
 }
 
 func CreateTemplate(templateService template.Service) fiber.Handler {
@@ -85,7 +86,7 @@ func UpdateTemplate(templateService template.Service) fiber.Handler {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(presenter.TemplateErrorResponse(err))
 		}
-		result, err := templateService.Update(uint(templateID), requestBody.Name, requestBody.Content, requestBody.Variables, requestBody.Fonts)
+		result, err := templateService.Update(uint(templateID), requestBody.Name, requestBody.Content, requestBody.Variables, requestBody.Fonts, requestBody.PdfBackgroundColor)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.TemplateErrorResponse(err))

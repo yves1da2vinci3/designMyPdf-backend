@@ -30,7 +30,7 @@ func NamespaceSuccessResponse(namespace *entities.Namespace) *fiber.Map {
 func NamespacesSuccessResponse(data *[]entities.Namespace) *fiber.Map {
 	return &fiber.Map{
 		"status":     true,
-		"namepsaces": data,
+		"namespaces": data,
 		"error":      nil,
 	}
 }

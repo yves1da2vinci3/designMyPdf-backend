@@ -15,7 +15,7 @@ type Service interface {
 	GetUserTemplates(userID uint) (*[]entities.Template, error)
 	Get(ID uint) (*entities.Template, error)
 	GetByUUID(UUID string) (*entities.Template, error)
-	Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString) (*entities.Template, error)
+	Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString, pdfBackgroundColor string) (*entities.Template, error)
 	UpdateFull(ID uint, fields map[string]interface{}) (*entities.Template, error)
 	ChangeTemplateNamespace(ID uint, NamespaceID uint) error
 }
@@ -69,7 +69,7 @@ func (s *service) GetUserTemplates(userID uint) (*[]entities.Template, error) {
 }
 
 // Update updates the name of the template with the given ID.
-func (s *service) Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString) (*entities.Template, error) {
+func (s *service) Update(ID uint, name string, content string, variables datatypes.JSON, fonts entities.MultiString, pdfBackgroundColor string) (*entities.Template, error) {
 	template, err := s.repository.Get(ID)
 	if err != nil {
 		return nil, err
@@ -78,6 +78,7 @@ func (s *service) Update(ID uint, name string, content string, variables datatyp
 	template.Content = content
 	template.Variables = variables
 	template.Fonts = fonts
+	template.PdfBackgroundColor = pdfBackgroundColor
 
 	if err := s.repository.Update(template); err != nil {
 		return nil, err

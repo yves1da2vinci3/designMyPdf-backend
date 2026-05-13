@@ -30,8 +30,9 @@ type Template struct {
 	IsMarketplace bool        `json:"is_marketplace" gorm:"default:false"`
 	IsPublished   bool        `json:"is_published" gorm:"default:false"`
 	Category      string      `json:"category"`
-	Features      MultiString `json:"features"`
-	UsesCount     int         `json:"uses_count" gorm:"default:0"`
+	Features           MultiString `json:"features"`
+	UsesCount          int         `json:"uses_count" gorm:"default:0"`
+	PdfBackgroundColor string      `json:"pdf_background_color" gorm:"default:''"`
 }
 
 func (template *Template) BeforeCreate(tx *gorm.DB) (err error) {
