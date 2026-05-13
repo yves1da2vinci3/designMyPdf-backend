@@ -1,9 +1,11 @@
 package routes
 
 import (
+	"context"
 	"designmypdf/api/handlers"
 	"designmypdf/pkg/amqp"
 	"designmypdf/pkg/auth"
+	"designmypdf/pkg/fbadmin"
 	"designmypdf/pkg/key"
 	"designmypdf/pkg/logs"
 	"designmypdf/pkg/marketplace"
@@ -24,8 +26,13 @@ func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api", logger.New())
 	api.Get("/", handlers.HelloWorld)
 
-	// Auth
-	authService := auth.NewService(user.Repository{})
+	// Auth (Firebase optional: if init fails, POST /auth/firebase returns 503)
+	firebaseAuth, err := fbadmin.NewAuthClient(context.Background())
+	if err != nil {
+		log.Printf("Warning: Firebase Admin not initialized: %v — POST /auth/firebase unavailable", err)
+		firebaseAuth = nil
+	}
+	authService := auth.NewService(user.Repository{}, firebaseAuth)
 	AuthRouter(api, authService)
 	// Namespace
 	namespaceService := namespace.NewService(namespace.Repository{})

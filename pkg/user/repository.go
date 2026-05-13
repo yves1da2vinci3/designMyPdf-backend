@@ -2,6 +2,7 @@ package user
 
 import (
 	"designmypdf/pkg/entities"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -56,6 +57,33 @@ func (r *Repository) GetAll() ([]*entities.User, error) {
 func (r *Repository) GetByEmail(email string) (*entities.User, error) {
 	var user entities.User
 	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByEmailOrNil returns nil, nil when no row exists (unlike GetByEmail which returns gorm.ErrRecordNotFound).
+func (r *Repository) GetByEmailOrNil(email string) (*entities.User, error) {
+	var user entities.User
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+// GetByFirebaseUID returns the user linked to this Firebase UID, or nil, nil if none.
+func (r *Repository) GetByFirebaseUID(uid string) (*entities.User, error) {
+	if uid == "" {
+		return nil, nil
+	}
+	var user entities.User
+	if err := r.db.Where("firebase_uid = ?", uid).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &user, nil
