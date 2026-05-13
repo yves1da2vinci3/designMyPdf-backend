@@ -1,5 +1,6 @@
 # --- ÉTAPE 1 : BUILDER ---
-    FROM golang:1.22-bullseye AS builder
+    # Aligné sur go.mod (go 1.24 + toolchain) — une image 1.22 fait échouer go mod download en CI/Coolify
+    FROM golang:1.24-bookworm AS builder
 
     WORKDIR /app
     
