@@ -33,6 +33,7 @@ type Template struct {
 	Features           MultiString `json:"features"`
 	UsesCount          int         `json:"uses_count" gorm:"default:0"`
 	PdfBackgroundColor string      `json:"pdf_background_color" gorm:"default:''"`
+	PdfContentPadding  string      `json:"pdf_content_padding" gorm:"default:''"`
 }
 
 func (template *Template) BeforeCreate(tx *gorm.DB) (err error) {
