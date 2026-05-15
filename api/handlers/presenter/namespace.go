@@ -27,7 +27,7 @@ func NamespaceSuccessResponse(namespace *entities.Namespace) *fiber.Map {
 }
 
 // NamespacesSuccessResponse is the list SuccessResponse that will be passed in the response by Handler
-func NamespacesSuccessResponse(data *[]entities.Namespace) *fiber.Map {
+func NamespacesSuccessResponse(data *[]entities.NamespaceListItem) *fiber.Map {
 	return &fiber.Map{
 		"status":     true,
 		"namespaces": data,

@@ -118,6 +118,7 @@ func GeneratePdfForKey(
 
 	pad := utils.EffectivePdfContentPadding(templateEntity.PdfContentPadding)
 	padStyle := fmt.Sprintf(".content{box-sizing:border-box;padding:%s}", pad)
+	printBreakCSS := `.pdf-page-break-before{break-before:page;page-break-before:always}.pdf-avoid-break-inside{break-inside:avoid;page-break-inside:avoid}table,.pdf-keep-together,canvas[data-chart-type]{break-inside:avoid;page-break-inside:avoid}`
 
 	fullHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html>
@@ -127,12 +128,12 @@ func GeneratePdfForKey(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     %s
     %s
-    <style>%s %s %s</style>
+    <style>%s %s %s %s</style>
 </head>
 <body class="overflow-x-hidden overflow-y-auto">
     <div class="content">%s</div>
 </body>
-</html>`, frameworkTag, fontImports, fontCSS, bgStyle, padStyle, renderedHTML)
+</html>`, frameworkTag, fontImports, fontCSS, bgStyle, padStyle, printBreakCSS, renderedHTML)
 
 	if err := os.MkdirAll("./uploads/template", 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %w", err)
