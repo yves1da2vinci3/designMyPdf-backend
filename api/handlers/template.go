@@ -4,6 +4,7 @@ import (
 	"designmypdf/api/handlers/presenter"
 	"designmypdf/pkg/entities"
 	"designmypdf/pkg/template"
+	"designmypdf/utils"
 	"errors"
 	"net/http"
 	"strconv"
@@ -20,6 +21,7 @@ type TemplateRequest struct {
 	Variables          datatypes.JSON       `json:"variables" gorm:"type:json"`
 	Fonts              entities.MultiString `json:"fonts" gorm:"type:text"`
 	PdfBackgroundColor string               `json:"pdf_background_color"`
+	PdfContentPadding  string               `json:"pdf_content_padding"`
 }
 
 func CreateTemplate(templateService template.Service) fiber.Handler {
@@ -86,7 +88,11 @@ func UpdateTemplate(templateService template.Service) fiber.Handler {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(presenter.TemplateErrorResponse(err))
 		}
-		result, err := templateService.Update(uint(templateID), requestBody.Name, requestBody.Content, requestBody.Variables, requestBody.Fonts, requestBody.PdfBackgroundColor)
+		if !utils.IsValidPdfContentPadding(requestBody.PdfContentPadding) {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid pdf_content_padding")))
+		}
+		result, err := templateService.Update(uint(templateID), requestBody.Name, requestBody.Content, requestBody.Variables, requestBody.Fonts, requestBody.PdfBackgroundColor, requestBody.PdfContentPadding)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.TemplateErrorResponse(err))

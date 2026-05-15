@@ -37,9 +37,9 @@ var (
 	storageMu       sync.Mutex
 )
 
-func generateHash(templateContent string, data map[string]interface{}, format string, bgColor string) string {
+func generateHash(templateContent string, data map[string]interface{}, format string, bgColor string, contentPadding string) string {
 	dataBytes, _ := json.Marshal(data)
-	hash := md5.Sum([]byte(templateContent + string(dataBytes) + format + bgColor))
+	hash := md5.Sum([]byte(templateContent + string(dataBytes) + format + bgColor + contentPadding))
 	return hex.EncodeToString(hash[:])
 }
 
@@ -77,7 +77,7 @@ func GeneratePdfForKey(
 	data map[string]interface{},
 	format string,
 ) (string, error) {
-	contentHash := generateHash(templateEntity.Content, data, format, templateEntity.PdfBackgroundColor)
+	contentHash := generateHash(templateEntity.Content, data, format, templateEntity.PdfBackgroundColor, templateEntity.PdfContentPadding)
 
 	pdfCacheInstance.mu.RLock()
 	cachedURL, found := pdfCacheInstance.cache[contentHash]
@@ -116,6 +116,9 @@ func GeneratePdfForKey(
 		bgStyle = fmt.Sprintf("body{background-color:%s!important}", templateEntity.PdfBackgroundColor)
 	}
 
+	pad := utils.EffectivePdfContentPadding(templateEntity.PdfContentPadding)
+	padStyle := fmt.Sprintf(".content{box-sizing:border-box;padding:%s}", pad)
+
 	fullHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html>
 <head>
@@ -124,12 +127,12 @@ func GeneratePdfForKey(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     %s
     %s
-    <style>%s %s</style>
+    <style>%s %s %s</style>
 </head>
 <body class="overflow-x-hidden overflow-y-auto">
     <div class="content">%s</div>
 </body>
-</html>`, frameworkTag, fontImports, fontCSS, bgStyle, renderedHTML)
+</html>`, frameworkTag, fontImports, fontCSS, bgStyle, padStyle, renderedHTML)
 
 	if err := os.MkdirAll("./uploads/template", 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %w", err)
