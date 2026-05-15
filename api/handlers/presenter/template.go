@@ -25,6 +25,18 @@ func TemplatesSuccessResponse(data *[]entities.Template) *fiber.Map {
 	}
 }
 
+// TemplatesPaginatedSuccessResponse is used when page/limit query params are present.
+func TemplatesPaginatedSuccessResponse(items []entities.TemplateListItem, total int64, page, limit int) *fiber.Map {
+	return &fiber.Map{
+		"status":    true,
+		"templates": items,
+		"total":     total,
+		"page":      page,
+		"limit":     limit,
+		"error":     nil,
+	}
+}
+
 // UserErrorResponse is the ErrorResponse that will be passed in the response by Handler
 func TemplateErrorResponse(err error) *fiber.Map {
 	return &fiber.Map{

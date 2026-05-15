@@ -9,7 +9,7 @@ import (
 type Service interface {
 	Create(name string, userID uint) (*entities.Namespace, error)
 	Delete(ID uint) (*entities.Namespace, error)
-	GetUserNamespaces(userID uint) (*[]entities.Namespace, error)
+	GetUserNamespaces(userID uint) (*[]entities.NamespaceListItem, error)
 	Update(ID uint, name string) (*entities.Namespace, error)
 }
 
@@ -49,7 +49,7 @@ func (s *service) Delete(ID uint) (*entities.Namespace, error) {
 }
 
 // GetUserNamespaces retrieves all namespaces for the given userID.
-func (s *service) GetUserNamespaces(userID uint) (*[]entities.Namespace, error) {
+func (s *service) GetUserNamespaces(userID uint) (*[]entities.NamespaceListItem, error) {
 	namespaces, err := s.repository.GetAllUserNamespaces(userID)
 	if err != nil {
 		return nil, err

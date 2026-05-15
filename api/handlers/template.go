@@ -137,6 +137,43 @@ func GetTemplates(templateService template.Service) fiber.Handler {
 			return c.JSON(presenter.TemplateErrorResponse(err))
 		}
 		userID := uint(userIDFloat)
+
+		pageStr := c.Query("page")
+		limitStr := c.Query("limit")
+		namespaceStr := c.Query("namespace_id")
+		q := strings.TrimSpace(c.Query("q"))
+
+		if pageStr != "" || limitStr != "" || namespaceStr != "" || q != "" {
+			page := 1
+			limit := 12
+			if pageStr != "" {
+				if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+					page = p
+				}
+			}
+			if limitStr != "" {
+				if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+					limit = l
+					if limit > 50 {
+						limit = 50
+					}
+				}
+			}
+			var namespaceID *uint
+			if namespaceStr != "" {
+				if ns, err := strconv.ParseUint(namespaceStr, 10, 32); err == nil {
+					v := uint(ns)
+					namespaceID = &v
+				}
+			}
+			result, err := templateService.ListUserTemplates(userID, namespaceID, q, page, limit)
+			if err != nil {
+				c.Status(http.StatusInternalServerError)
+				return c.JSON(presenter.TemplateErrorResponse(err))
+			}
+			return c.JSON(presenter.TemplatesPaginatedSuccessResponse(result.Items, result.Total, page, limit))
+		}
+
 		result, err := templateService.GetUserTemplates(userID)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
