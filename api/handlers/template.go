@@ -24,6 +24,16 @@ type TemplateRequest struct {
 	PdfContentPadding  string               `json:"pdf_content_padding"`
 }
 
+// UpdateTemplateRequest supports partial JSON bodies: omitted keys stay unchanged in DB.
+type UpdateTemplateRequest struct {
+	Name               *string                 `json:"name,omitempty"`
+	Content            *string                 `json:"content,omitempty"`
+	Variables          *datatypes.JSON         `json:"variables,omitempty"`
+	Fonts              *entities.MultiString   `json:"fonts,omitempty"`
+	PdfBackgroundColor *string                 `json:"pdf_background_color,omitempty"`
+	PdfContentPadding  *string                 `json:"pdf_content_padding,omitempty"`
+}
+
 func CreateTemplate(templateService template.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var requestBody TemplateRequest
@@ -77,22 +87,52 @@ func UpdateTemplate(templateService template.Service) fiber.Handler {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid template ID")))
 		}
-		var requestBody TemplateRequest
-		err = c.BodyParser(&requestBody)
+		var req UpdateTemplateRequest
+		if err = c.BodyParser(&req); err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.TemplateErrorResponse(err))
+		}
+
+		tpl, err := templateService.Get(uint(templateID))
 		if err != nil {
-			c.Status(http.StatusBadRequest)
+			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.TemplateErrorResponse(err))
 		}
-		if requestBody.Name == "" {
-			err = errors.New("template name cannot be empty")
-			c.Status(http.StatusBadRequest)
-			return c.JSON(presenter.TemplateErrorResponse(err))
+
+		if req.Name != nil {
+			trimmed := strings.TrimSpace(*req.Name)
+			if trimmed == "" {
+				c.Status(http.StatusBadRequest)
+				return c.JSON(presenter.TemplateErrorResponse(errors.New("template name cannot be empty")))
+			}
+			tpl.Name = trimmed
 		}
-		if !utils.IsValidPdfContentPadding(requestBody.PdfContentPadding) {
-			c.Status(http.StatusBadRequest)
-			return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid pdf_content_padding")))
+		if req.Content != nil {
+			tpl.Content = *req.Content
 		}
-		result, err := templateService.Update(uint(templateID), requestBody.Name, requestBody.Content, requestBody.Variables, requestBody.Fonts, requestBody.PdfBackgroundColor, requestBody.PdfContentPadding)
+		if req.Variables != nil {
+			tpl.Variables = *req.Variables
+		}
+		if req.Fonts != nil {
+			tpl.Fonts = *req.Fonts
+		}
+		if req.PdfBackgroundColor != nil {
+			tpl.PdfBackgroundColor = *req.PdfBackgroundColor
+		}
+		if req.PdfContentPadding != nil {
+			if !utils.IsValidPdfContentPadding(*req.PdfContentPadding) {
+				c.Status(http.StatusBadRequest)
+				return c.JSON(presenter.TemplateErrorResponse(errors.New("invalid pdf_content_padding")))
+			}
+			tpl.PdfContentPadding = *req.PdfContentPadding
+		}
+
+		if strings.TrimSpace(tpl.Name) == "" {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(presenter.TemplateErrorResponse(errors.New("template name cannot be empty")))
+		}
+
+		result, err := templateService.Update(uint(templateID), tpl.Name, tpl.Content, tpl.Variables, tpl.Fonts, tpl.PdfBackgroundColor, tpl.PdfContentPadding)
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(presenter.TemplateErrorResponse(err))
