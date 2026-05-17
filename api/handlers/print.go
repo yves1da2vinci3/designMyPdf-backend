@@ -7,7 +7,7 @@ import (
 	"designmypdf/pkg/logs"
 	"designmypdf/pkg/pdfjob"
 	"designmypdf/pkg/template"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"runtime/debug"
 	"time"
@@ -70,28 +70,19 @@ func GeneratePdf(c *fiber.Ctx) error {
 }
 
 func logPdfGeneration(keyID, templateID uint, requestBody []byte, pdfURL, errorMessage string, statusCode entities.StatusCode) {
-	logService := logs.NewService(logs.Repository{})
-
-	responseBody := fiber.Map{"path": pdfURL}
-	responseBodyBytes, err := json.Marshal(responseBody)
-	if err != nil {
-		fmt.Printf("failed to marshal response body: %v\n", err)
-		return
+	var err error
+	if errorMessage != "" {
+		err = errors.New(errorMessage)
 	}
-
-	logEntry := &entities.Log{
-		TemplateID:   templateID,
-		KeyID:        keyID,
-		CalledAt:     time.Now(),
-		RequestBody:  requestBody,
-		ResponseBody: datatypes.JSON(responseBodyBytes),
-		StatusCode:   statusCode,
-		ErrorMessage: errorMessage,
-	}
-
-	if err := logService.CreateLog(logEntry); err != nil {
-		fmt.Printf("failed to log PDF generation: %v\n", err)
-	}
+	_ = logs.RecordPdfGeneration(
+		keyID,
+		templateID,
+		"",
+		requestBody,
+		map[string]interface{}{"path": pdfURL},
+		statusCode,
+		err,
+	)
 }
 
 func logAndRespond(c *fiber.Ctx, k *entities.Key, t *entities.Template, errorMessage string, statusCode int) error {
