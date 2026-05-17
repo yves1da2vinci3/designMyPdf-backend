@@ -10,10 +10,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"regexp"
 	"net/url"
 	"os"
+	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -116,9 +117,18 @@ func GeneratePdfForKey(
 		bgStyle = fmt.Sprintf("body{background-color:%s!important}", templateEntity.PdfBackgroundColor)
 	}
 
+	formatNorm := strings.ToUpper(strings.TrimSpace(format))
+	if formatNorm == "" {
+		formatNorm = "A4"
+	}
+
 	pad := utils.EffectivePdfContentPadding(templateEntity.PdfContentPadding)
-	padStyle := fmt.Sprintf(".content{box-sizing:border-box;padding:%s}", pad)
-	printBreakCSS := `.pdf-page-break-before{break-before:page;page-break-before:always}.pdf-avoid-break-inside{break-inside:avoid;page-break-inside:avoid}table,.pdf-keep-together,canvas[data-chart-type]{break-inside:avoid;page-break-inside:avoid}`
+	contentWidth := utils.ContentAreaWidthPx(formatNorm)
+	padStyle := fmt.Sprintf(
+		".content{box-sizing:border-box;padding:%s;width:%dpx;min-height:auto;height:auto}",
+		pad,
+		contentWidth,
+	)
 
 	fullHTML := fmt.Sprintf(`<!DOCTYPE html>
 <html>
@@ -128,12 +138,23 @@ func GeneratePdfForKey(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     %s
     %s
-    <style>%s %s %s %s</style>
+    <style>%s %s %s %s %s</style>
+    %s
 </head>
-<body class="overflow-x-hidden overflow-y-auto">
+<body>
     <div class="content">%s</div>
 </body>
-</html>`, frameworkTag, fontImports, fontCSS, bgStyle, padStyle, printBreakCSS, renderedHTML)
+</html>`,
+		frameworkTag,
+		fontImports,
+		fontCSS,
+		bgStyle,
+		padStyle,
+		utils.PdfPrintBreakCSS,
+		utils.PdfExportResetCSS,
+		utils.PaginationScriptTag(),
+		renderedHTML,
+	)
 
 	if err := os.MkdirAll("./uploads/template", 0755); err != nil {
 		return "", fmt.Errorf("failed to create upload directory: %w", err)
@@ -144,10 +165,15 @@ func GeneratePdfForKey(
 
 	runtime.GC()
 
-	f, err := utils.GetFormat(format)
+	f, err := utils.GetFormat(formatNorm)
 	if err != nil {
-		return "", fmt.Errorf("invalid format %q: %w", format, err)
+		return "", fmt.Errorf("invalid format %q: %w", formatNorm, err)
 	}
+
+	viewportW, viewportH := utils.PaperViewportCssPixels(formatNorm)
+	contentAreaH := utils.ContentAreaHeightPx(formatNorm, templateEntity.PdfContentPadding)
+	orphanThreshold := utils.OrphanThresholdPx(contentAreaH)
+	hintsJS := utils.ApplyPdfPageBreakHintsJS(contentAreaH, orphanThreshold, true)
 
 	pool := GetBrowserPool()
 	tabCtx, cancelTab := pool.NewTab()
@@ -160,9 +186,12 @@ func GeneratePdfForKey(
 	var pdfBuf []byte
 	if err := chromedp.Run(tabCtx,
 		chromedp.Navigate("data:text/html,"+url.PathEscape(fullHTML)),
-		// Give Tailwind v4 browser script time to scan classes and inject CSS.
+		chromedp.EmulateViewport(int64(viewportW), int64(viewportH)),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			return chromedp.Evaluate(`new Promise(r => setTimeout(r, 150))`, nil).Do(ctx)
+			return chromedp.Evaluate(utils.WaitForTailwindJS(), nil).Do(ctx)
+		}),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			return chromedp.Evaluate(hintsJS, nil).Do(ctx)
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var runErr error
