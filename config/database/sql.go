@@ -50,6 +50,7 @@ func InitializeSQL(dbType, host, port, user, password, dbName string) (*gorm.DB,
 		&entities.WebhookEvent{},
 		&entities.WebhookSendAttempt{},
 		&entities.AiGenerationUsage{},
+		&entities.UserCredit{},
 	)
 
 	return db, nil

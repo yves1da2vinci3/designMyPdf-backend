@@ -14,6 +14,7 @@ import (
 	"designmypdf/pkg/storage"
 	"designmypdf/pkg/template"
 	"designmypdf/pkg/user"
+	"designmypdf/pkg/usercredit"
 	"log"
 	"os"
 
@@ -87,8 +88,10 @@ func SetupRoutes(app *fiber.App) {
 		api.Get("/pdf-jobs/:jobId", handlers.GetJobStatus(jobSvc))
 	}
 
-	// AI quota
-	AiQuotaRouter(api)
+	// AI credits
+	creditRepo := usercredit.Repository{}
+	creditSvc := usercredit.NewService(creditRepo)
+	AiCreditsRouter(api, creditSvc)
 
 	// Webhook subscription management
 	WebhookRouter(api)
