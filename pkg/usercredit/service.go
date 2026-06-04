@@ -2,6 +2,7 @@ package usercredit
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -21,6 +22,8 @@ var modelRates = map[string][2]int{
 	"claude-sonnet-4-20250514":  {3, 15},
 	"claude-sonnet-4-5":         {3, 15},
 	"claude-sonnet-4-6":         {3, 15},
+	"claude-sonnet-4":           {3, 15},
+	"claude-3-5-sonnet-latest":  {3, 15},
 	"claude-opus-4-7":           {5, 25},
 	"claude-opus-4-8":           {5, 25},
 }
@@ -28,11 +31,23 @@ var modelRates = map[string][2]int{
 // defaultRate is used when model is unknown — Sonnet pricing as safe fallback.
 var defaultRate = [2]int{3, 15}
 
-func calcMicroCredits(model string, inputTokens, outputTokens int) int {
-	rate, ok := modelRates[model]
-	if !ok {
-		rate = defaultRate
+func resolveModelRate(model string) [2]int {
+	bestLen := 0
+	var best [2]int
+	for prefix, rate := range modelRates {
+		if strings.HasPrefix(model, prefix) && len(prefix) > bestLen {
+			bestLen = len(prefix)
+			best = rate
+		}
 	}
+	if bestLen > 0 {
+		return best
+	}
+	return defaultRate
+}
+
+func calcMicroCredits(model string, inputTokens, outputTokens int) int {
+	rate := resolveModelRate(model)
 	return inputTokens*rate[0] + outputTokens*rate[1]
 }
 
@@ -82,6 +97,11 @@ func (s *Service) Consume(userID uint, req ConsumeRequest) (int, float64, error)
 		return 0, 0, err
 	}
 	return result.RemainingMicro, result.CreditsRemaining, nil
+}
+
+// ConsumeWithResult deducts credits and returns full result including deducted amount.
+func (s *Service) ConsumeWithResult(userID uint, req ConsumeRequest) (ConsumeResult, error) {
+	return s.consume(userID, req, false)
 }
 
 // ConsumeUpToLimit deducts at most the remaining monthly budget (no error when capped).

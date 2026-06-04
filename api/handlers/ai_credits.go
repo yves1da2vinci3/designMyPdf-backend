@@ -40,6 +40,17 @@ type consumeCreditsRequest struct {
 	AllowPartial bool   `json:"allowPartial"`
 }
 
+func consumeCreditsJSON(result usercredit.ConsumeResult, capped bool) fiber.Map {
+	return fiber.Map{
+		"ok":               true,
+		"remaining":        result.RemainingMicro,
+		"creditsRemaining": result.CreditsRemaining,
+		"deducted":         result.DeductedMicro,
+		"deductedCredits":  float64(result.DeductedMicro) / 1000,
+		"capped":           capped,
+	}
+}
+
 func ConsumeAiCredits(svc *usercredit.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		userID, err := getUserIDFromContext(c.Locals("userID"))
@@ -66,16 +77,10 @@ func ConsumeAiCredits(svc *usercredit.Service) fiber.Handler {
 				c.Status(http.StatusInternalServerError)
 				return c.JSON(fiber.Map{"error": "failed to consume credits"})
 			}
-			return c.JSON(fiber.Map{
-				"ok":               true,
-				"remaining":        result.RemainingMicro,
-				"creditsRemaining": result.CreditsRemaining,
-				"deducted":         result.DeductedMicro,
-				"capped":           result.Capped,
-			})
+			return c.JSON(consumeCreditsJSON(result, result.Capped))
 		}
 
-		remaining, creditsRemaining, err := svc.Consume(userID, consumeReq)
+		result, err := svc.ConsumeWithResult(userID, consumeReq)
 		if err != nil {
 			if err.Error() == "monthly credit limit reached" {
 				c.Status(http.StatusTooManyRequests)
@@ -85,6 +90,6 @@ func ConsumeAiCredits(svc *usercredit.Service) fiber.Handler {
 			return c.JSON(fiber.Map{"error": "failed to consume credits"})
 		}
 
-		return c.JSON(fiber.Map{"ok": true, "remaining": remaining, "creditsRemaining": creditsRemaining, "capped": false})
+		return c.JSON(consumeCreditsJSON(result, false))
 	}
 }
