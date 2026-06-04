@@ -1,3 +1,14 @@
+// Package usercredit déduit un budget mensuel par utilisateur à partir des tokens API.
+//
+// Économie (miroir tarifs Anthropic $/million de tokens) :
+//   - 1 crédit affiché = 1000 µcrédits = 0,001 $ de coût catalogue.
+//   - Plafond mensuel = 1_000_000 µcrédits = 1000 crédits affichés = 1 $ max/utilisateur/mois.
+//
+// Débit : µcrédits = inputTokens×rateIn + outputTokens×rateOut
+//   rateIn/rateOut = prix $ par 1M tokens (ex. Haiku {1,5}, Sonnet {3,15}).
+//
+// Exemple Sonnet (image) : 15k in + 6k out → 135_000 µcrédits = 135 crédits (~13,5 % du mois).
+// Exemple Haiku (texte) : 8k in + 2k out → 18_000 µcrédits = 18 crédits.
 package usercredit
 
 import (
@@ -13,9 +24,7 @@ type ConsumeRequest struct {
 	OutputTokens int
 }
 
-// modelRates maps model ID prefixes to [inputRate, outputRate] in µcredits/token.
-// µcredits/token == dollar price per 1M tokens (numerically identical).
-// 1 credit = 1000 µcredits = $0.001. $1 limit = 1,000,000 µcredits.
+// modelRates : préfixe modèle → [tarif input, tarif output] en µcrédits/token (= $/1M tokens).
 var modelRates = map[string][2]int{
 	"claude-haiku-4-5-20251001": {1, 5},
 	"claude-haiku-4-5":          {1, 5},
