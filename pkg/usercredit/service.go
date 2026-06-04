@@ -1,7 +1,19 @@
+// Package usercredit déduit un budget mensuel par utilisateur à partir des tokens API.
+//
+// Économie (miroir tarifs Anthropic $/million de tokens) :
+//   - 1 crédit affiché = 1000 µcrédits = 0,001 $ de coût catalogue.
+//   - Plafond mensuel = 1_000_000 µcrédits = 1000 crédits affichés = 1 $ max/utilisateur/mois.
+//
+// Débit : µcrédits = inputTokens×rateIn + outputTokens×rateOut
+//   rateIn/rateOut = prix $ par 1M tokens (ex. Haiku {1,5}, Sonnet {3,15}).
+//
+// Exemple Sonnet (image) : 15k in + 6k out → 135_000 µcrédits = 135 crédits (~13,5 % du mois).
+// Exemple Haiku (texte) : 8k in + 2k out → 18_000 µcrédits = 18 crédits.
 package usercredit
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -12,15 +24,15 @@ type ConsumeRequest struct {
 	OutputTokens int
 }
 
-// modelRates maps model ID prefixes to [inputRate, outputRate] in µcredits/token.
-// µcredits/token == dollar price per 1M tokens (numerically identical).
-// 1 credit = 1000 µcredits = $0.001. $1 limit = 1,000,000 µcredits.
+// modelRates : préfixe modèle → [tarif input, tarif output] en µcrédits/token (= $/1M tokens).
 var modelRates = map[string][2]int{
 	"claude-haiku-4-5-20251001": {1, 5},
 	"claude-haiku-4-5":          {1, 5},
 	"claude-sonnet-4-20250514":  {3, 15},
 	"claude-sonnet-4-5":         {3, 15},
 	"claude-sonnet-4-6":         {3, 15},
+	"claude-sonnet-4":           {3, 15},
+	"claude-3-5-sonnet-latest":  {3, 15},
 	"claude-opus-4-7":           {5, 25},
 	"claude-opus-4-8":           {5, 25},
 }
@@ -28,11 +40,23 @@ var modelRates = map[string][2]int{
 // defaultRate is used when model is unknown — Sonnet pricing as safe fallback.
 var defaultRate = [2]int{3, 15}
 
-func calcMicroCredits(model string, inputTokens, outputTokens int) int {
-	rate, ok := modelRates[model]
-	if !ok {
-		rate = defaultRate
+func resolveModelRate(model string) [2]int {
+	bestLen := 0
+	var best [2]int
+	for prefix, rate := range modelRates {
+		if strings.HasPrefix(model, prefix) && len(prefix) > bestLen {
+			bestLen = len(prefix)
+			best = rate
+		}
 	}
+	if bestLen > 0 {
+		return best
+	}
+	return defaultRate
+}
+
+func calcMicroCredits(model string, inputTokens, outputTokens int) int {
+	rate := resolveModelRate(model)
 	return inputTokens*rate[0] + outputTokens*rate[1]
 }
 
@@ -82,6 +106,11 @@ func (s *Service) Consume(userID uint, req ConsumeRequest) (int, float64, error)
 		return 0, 0, err
 	}
 	return result.RemainingMicro, result.CreditsRemaining, nil
+}
+
+// ConsumeWithResult deducts credits and returns full result including deducted amount.
+func (s *Service) ConsumeWithResult(userID uint, req ConsumeRequest) (ConsumeResult, error) {
+	return s.consume(userID, req, false)
 }
 
 // ConsumeUpToLimit deducts at most the remaining monthly budget (no error when capped).
