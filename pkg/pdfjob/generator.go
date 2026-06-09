@@ -138,20 +138,23 @@ func GeneratePdfForKey(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     %s
     %s
-    <style>%s %s %s %s %s</style>
+    %s
+    <style>%s %s %s %s %s %s</style>
     %s
 </head>
-<body>
+<body class="` + utils.CodeHighlightFitBodyClass + `">
     <div class="content">%s</div>
 </body>
 </html>`,
 		frameworkTag,
 		fontImports,
+		utils.CodeHighlightHeadTags(),
 		fontCSS,
 		bgStyle,
 		padStyle,
 		utils.PdfPrintBreakCSS,
 		utils.PdfExportResetCSS,
+		utils.CodeHighlightPdfFitCSS(),
 		utils.PaginationScriptTag(),
 		renderedHTML,
 	)
@@ -189,6 +192,9 @@ func GeneratePdfForKey(
 		chromedp.EmulateViewport(int64(viewportW), int64(viewportH)),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			return chromedp.Evaluate(utils.WaitForTailwindJS(), nil).Do(ctx)
+		}),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			return chromedp.Evaluate(utils.CodeHighlightAwaitJS(), nil).Do(ctx)
 		}),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			return chromedp.Evaluate(hintsJS, nil).Do(ctx)

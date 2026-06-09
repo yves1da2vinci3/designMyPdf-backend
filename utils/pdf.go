@@ -88,6 +88,9 @@ func printToPDF(htmlContent string, res *[]byte, format *Format) chromedp.Tasks 
 	return chromedp.Tasks{
 		chromedp.Navigate("data:text/html," + url.PathEscape(htmlContent)),
 		chromedp.ActionFunc(func(ctx context.Context) error {
+			return chromedp.Evaluate(CodeHighlightPdfAwaitJS(), nil).Do(ctx)
+		}),
+		chromedp.ActionFunc(func(ctx context.Context) error {
 			buf, _, err := page.PrintToPDF().
 				WithPrintBackground(true).
 				WithPaperWidth(format.Width).
