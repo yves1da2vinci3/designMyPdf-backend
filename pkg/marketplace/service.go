@@ -12,6 +12,11 @@ var allowedCategories = map[string]struct{}{
 	"FINANCIAL REPORT": {},
 	"MARKETING":        {},
 	"LEGAL":            {},
+	"RESUME":           {},
+	"PROPOSAL":         {},
+	"CERTIFICATE":      {},
+	"RECEIPT":          {},
+	"CONTRACT":         {},
 	"OTHER":            {},
 }
 
